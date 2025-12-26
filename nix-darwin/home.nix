@@ -4,8 +4,8 @@
 { config, pkgs, ... }:
 
 {
-  home.username = "omerxx";
-  home.homeDirectory = "/Users/omerxx";
+  home.username = "van";
+  home.homeDirectory = "/Users/van";
   home.stateVersion = "23.05"; # Please read the comment before changing.
 
 # Makes sense for user specific applications that shouldn't be available system-wide
@@ -40,12 +40,15 @@
   programs.home-manager.enable = true;
   programs.zsh = {
     enable = true;
-    initExtra = ''
+    initContent = ''
       # Add any additional configurations here
       export PATH=/run/current-system/sw/bin:$HOME/.nix-profile/bin:$PATH
       if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
         . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
       fi
+      
+      # Initialize Atuin (Enhanced Shell History)
+      eval "$(atuin init zsh)"
     '';
   };
 }

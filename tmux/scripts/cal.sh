@@ -72,11 +72,22 @@ parse_result() {
 	title="${array[*]:5:30}"
 }
 
-calculate_times(){
-	epoc_meeting=$(date -j -f "%T" "$time:00" +%s)
-	epoc_now=$(date +%s)
-	epoc_diff=$((epoc_meeting - epoc_now))
-	minutes_till_meeting=$((epoc_diff/60))
+calculate_times() {
+  # Add :00 seconds if not already present
+  time_with_seconds="${time}:00"
+
+  # macOS BSD date syntax: -j -f "format" "input_string" "+output_format"
+  epoc_meeting=$(date -j -f "%H:%M:%S" "$time_with_seconds" +%s 2>/dev/null)
+
+  # Fallback in case something weird happens (optional)
+  if [ -z "$epoc_meeting" ]; then
+    echo "Warning: Failed to parse time '$time_with_seconds'" >&2
+    epoc_meeting=0
+  fi
+
+  epoc_now=$(date +%s)
+  epoc_diff=$((epoc_meeting - epoc_now))
+  minutes_till_meeting=$((epoc_diff / 60))
 }
 
 display_popup() {

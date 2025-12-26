@@ -8,16 +8,25 @@ compinit
 source <(kubectl completion zsh)
 complete -C '/usr/local/bin/aws_completer' aws
 
-source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-bindkey '^w' autosuggest-execute
-bindkey '^e' autosuggest-accept
-bindkey '^u' autosuggest-toggle
+# Safely load zsh-autosuggestions
+if [ -f "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
+    source "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+    # bindkey '^w' autosuggest-execute
+    # bindkey '^e' autosuggest-accept
+    bindkey '^u' autosuggest-toggle
+fi
+
+# Safely load zsh-syntax-highlighting
+if [ -f "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]; then
+    source "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+
 bindkey '^L' vi-forward-word
 bindkey '^k' up-line-or-search
 bindkey '^j' down-line-or-search
 
 eval "$(starship init zsh)"
-export STARSHIP_CONFIG=~/.config/starship/starship.toml
+export STARSHIP_CONFIG="$HOME/.config/starship/starship.toml"
 
 # You may need to manually set your language environment
 export LANG=en_US.UTF-8
@@ -32,7 +41,7 @@ alias gc="git commit -m"
 alias gca="git commit -a -m"
 alias gp="git push origin HEAD"
 alias gpu="git pull origin"
-alias gst="git status"
+alias gs="git status"
 alias glog="git log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit"
 alias gdiff="git diff"
 alias gco="git checkout"
@@ -59,20 +68,20 @@ alias .....="cd ../../../.."
 alias ......="cd ../../../../.."
 
 # GO
-export GOPATH='/Users/omerxx/go'
+export GOPATH="$HOME/go"
 
 # VIM
-alias v="/Users/omerxx/.nix-profile/bin/nvim"
+alias v="$HOME/.nix-profile/bin/nvim"
 
 # Nmap
 alias nm="nmap -sC -sV -oN nmap"
 
-export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omer/.vimpkg/bin:${GOPATH}/bin:/Users/omerxx/.cargo/bin
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omer/.vimpkg/bin:${GOPATH}/bin:$HOME/.cargo/bin"
 
 alias cl='clear'
 
 # K8S
-export KUBECONFIG=~/.kube/config
+export KUBECONFIG="$HOME/.kube/config"
 alias k="kubectl"
 alias ka="kubectl apply -f"
 alias kg="kubectl get"
@@ -81,7 +90,7 @@ alias kdel="kubectl delete"
 alias kl="kubectl logs"
 alias kgpo="kubectl get pod"
 alias kgd="kubectl get deployments"
-alias kc="kubectx"
+alias kx="kubectx"
 alias kns="kubens"
 alias kl="kubectl logs -f"
 alias ke="kubectl exec -it"
@@ -100,25 +109,27 @@ alias lt="eza --tree --level=2 --long --icons --git"
 alias ltree="eza --tree --level=2  --icons --git"
 
 # SEC STUFF
-alias gobust='gobuster dir --wordlist ~/security/wordlists/diccnoext.txt --wildcard --url'
+alias gobust="gobuster dir --wordlist $HOME/security/wordlists/diccnoext.txt --wildcard --url"
 alias dirsearch='python dirsearch.py -w db/dicc.txt -b -u'
-alias massdns='~/hacking/tools/massdns/bin/massdns -r ~/hacking/tools/massdns/lists/resolvers.txt -t A -o S bf-targets.txt -w livehosts.txt -s 4000'
+alias massdns="$HOME/hacking/tools/massdns/bin/massdns -r $HOME/hacking/tools/massdns/lists/resolvers.txt -t A -o S bf-targets.txt -w livehosts.txt -s 4000"
 alias server='python -m http.server 4445'
 alias tunnel='ngrok http 4445'
-alias fuzz='ffuf -w ~/hacking/SecLists/content_discovery_all.txt -mc all -u'
-alias gr='~/go/src/github.com/tomnomnom/gf/gf'
+alias fuzz="ffuf -w $HOME/hacking/SecLists/content_discovery_all.txt -mc all -u"
+alias gr="$HOME/go/src/github.com/tomnomnom/gf/gf"
 
 ### FZF ###
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow'
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+[ -f "$HOME/.fzf.zsh" ] && source "$HOME/.fzf.zsh"
 
-export PATH=/opt/homebrew/bin:$PATH
+# Homebrew - prioritize over nix for latest packages
+export PATH=/opt/homebrew/bin:/opt/homebrew/sbin:$PATH
 
 alias mat='osascript -e "tell application \"System Events\" to key code 126 using {command down}" && tmux neww "cmatrix"'
 
 # Nix!
 export NIX_CONF_DIR=$HOME/.config/nix
-export PATH=/run/current-system/sw/bin:$PATH
+# Nix paths added after Homebrew so Homebrew takes precedence
+export PATH=$PATH:/run/current-system/sw/bin
 
 function ranger {
 	local IFS=$'\t\n'
@@ -143,14 +154,25 @@ fcd() { cd "$(find . -type d -not -path '*/.*' | fzf)" && l; }
 f() { echo "$(find . -type f -not -path '*/.*' | fzf)" | pbcopy }
 fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
 
- # Nix
- if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
-	 . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
- fi
- # End Nix
+# Nix multi-user daemon setup
+if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
+  . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
+fi
+export PATH="$PATH:/nix/var/nix/profiles/default/bin"
 
-export XDG_CONFIG_HOME="/Users/omerxx/.config"
+export XDG_CONFIG_HOME="$HOME/.config"
 
 eval "$(zoxide init zsh)"
 eval "$(atuin init zsh)"
 eval "$(direnv hook zsh)"
+
+# Force Block Cursor ALWAYS (even in vi-mode)
+# Define a function to reset cursor to block when keymap changes (e.g. going to insert mode)
+function zle-keymap-select {
+  echo -ne '\e[2 q'
+}
+zle -N zle-keymap-select
+
+# Ensure it runs on every prompt
+echo -ne '\e[2 q'
+precmd() { echo -ne '\e[2 q'; }
