@@ -35,6 +35,7 @@ export EDITOR=/opt/homebrew/bin/nvim
 
 alias la=tree
 alias cat=bat
+alias C=pbcopy
 
 # Git
 alias gc="git commit -m"

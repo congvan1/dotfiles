@@ -6,6 +6,9 @@ Host *
   AddressFamily inet
   ServerAliveInterval 15
   ConnectTimeout 20
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/id_ed25519
 
 Host bastion
     User ec2-user
