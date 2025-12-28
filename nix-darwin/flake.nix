@@ -16,13 +16,7 @@
     configuration = { pkgs, ... }: {
       # List packages installed in system profile. To search by name, run:
       # $ nix-env -qaP | grep wget
-      environment.systemPackages =
-        [ 
-          # Development Toolchains (Nix provides better version management)
-          pkgs.rustup            # Rust toolchain manager
-          pkgs.go                # Go language
-          
-        ];
+      environment.systemPackages = [];
       
       # Disable nix-darwin's Nix management (using Determinate Nix)
       nix.enable = false;
@@ -70,8 +64,8 @@
         
         # Global macOS settings
         NSGlobalDomain.AppleShowAllExtensions = true;
-        NSGlobalDomain.InitialKeyRepeat = 15; # Fast key repeat
-        NSGlobalDomain.KeyRepeat = 2; # Very fast key repeat
+        NSGlobalDomain.InitialKeyRepeat = 5; # Fast key repeat
+        NSGlobalDomain.KeyRepeat = 1; # Very fast key repeat
         NSGlobalDomain.ApplePressAndHoldEnabled = false; # Disable press-and-hold for keys
         NSGlobalDomain.NSAutomaticCapitalizationEnabled = false;
         NSGlobalDomain.NSAutomaticDashSubstitutionEnabled = false;
@@ -107,6 +101,17 @@
         "starship"             # Prompt (via Homebrew)
         "zsh-autosuggestions"
         "zsh-syntax-highlighting"
+        
+        # Development Toolchains
+        "rustup"
+        "go"
+        "gcc"
+        "cmake"
+        "pkg-config"
+        "make"
+        "tldr"
+        "stow"
+        "node"              # Node.js (includes npm)
           
         # Terminal & Shell
         "tmux"
@@ -129,11 +134,14 @@
         "git"
         "gh"                # GitHub CLI
         "pcre2"             # Git dependency (regex library)
+        "diff-so-fancy"
         
         # Kubernetes Tools
         "kubectl"
         "kubectx"
         "kubernetes-helm"
+        "kubeseal"
+        "k9s"
         
         # Container & VM Tools
         "docker"
@@ -142,7 +150,7 @@
         
         # Audio/Video
         "ffmpeg"
-        
+        "neovim"
         
         # Network & Security Tools
         "nmap"
@@ -168,6 +176,9 @@
         "glow"              # Markdown renderer
         "atuin"             # Shell history
         "cmatrix"           # Matrix effect
+        
+        # AI Agents
+        "aichat"            # All-in-one LLM CLI (GPT, Claude, Gemini)
         
         # DevOps & Infrastructure
         "terraform"

@@ -4,16 +4,14 @@ setopt prompt_subst
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 autoload bashcompinit && bashcompinit
 autoload -Uz compinit
-compinit
+compinit -d "$HOME/.cache/zsh/zcompdump"
+zstyle ':completion:*' cache-path "$HOME/.cache/zsh/zcompdump"
 source <(kubectl completion zsh)
 complete -C '/usr/local/bin/aws_completer' aws
 
 # Safely load zsh-autosuggestions
 if [ -f "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
     source "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-    # bindkey '^w' autosuggest-execute
-    # bindkey '^e' autosuggest-accept
-    bindkey '^u' autosuggest-toggle
 fi
 
 # Safely load zsh-syntax-highlighting
@@ -36,6 +34,7 @@ export EDITOR=/opt/homebrew/bin/nvim
 alias la=tree
 alias cat=bat
 alias C=pbcopy
+alias tf=terraform
 
 # Git
 alias gc="git commit -m"
@@ -72,12 +71,12 @@ alias ......="cd ../../../../.."
 export GOPATH="$HOME/go"
 
 # VIM
-alias v="$HOME/.nix-profile/bin/nvim"
+alias v="nvim"
 
 # Nmap
 alias nm="nmap -sC -sV -oN nmap"
 
-export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omer/.vimpkg/bin:${GOPATH}/bin:$HOME/.cargo/bin"
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omer/.vimpkg/bin:${GOPATH}/bin:$HOME/.cargo/bin"
 
 alias cl='clear'
 
@@ -98,6 +97,22 @@ alias ke="kubectl exec -it"
 alias kcns='kubectl config set-context --current --namespace'
 alias podname=''
 
+kdec() {
+    if [ -n "$2" ]; then
+        kubectl get secret "$1" -n "$2" -o yaml | yq '.data | to_entries[] | .key as $k | .value | @base64d | "\($k): \(.)"'
+    else
+        kubectl get secret "$1" -o yaml | yq '.data | to_entries[] | .key as $k | .value | @base64d | "\($k): \(.)"'
+    fi
+}
+
+seal() {
+    if [[ -e "$1" ]]; then
+        kubeseal --scope cluster-wide --controller-namespace kube-system --controller-name sealed-secrets-controller --cert $1 -o yaml -w sealed.yaml
+    else
+        echo "Path not exist"
+    fi
+}
+
 # HTTP requests with xh!
 alias http="xh"
 
@@ -105,9 +120,9 @@ alias http="xh"
 bindkey jj vi-cmd-mode
 
 # Eza
-alias l="eza -l --icons --git -a"
-alias lt="eza --tree --level=2 --long --icons --git"
-alias ltree="eza --tree --level=2  --icons --git"
+alias ll="eza -l --icons -a"
+alias lt="eza --tree --level=2 --long --icons"
+alias ltree="eza --tree --level=2  --icons"
 
 # SEC STUFF
 alias gobust="gobuster dir --wordlist $HOME/security/wordlists/diccnoext.txt --wildcard --url"
@@ -161,8 +176,6 @@ if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
 fi
 export PATH="$PATH:/nix/var/nix/profiles/default/bin"
 
-export XDG_CONFIG_HOME="$HOME/.config"
-
 eval "$(zoxide init zsh)"
 eval "$(atuin init zsh)"
 eval "$(direnv hook zsh)"
@@ -177,3 +190,34 @@ zle -N zle-keymap-select
 # Ensure it runs on every prompt
 echo -ne '\e[2 q'
 precmd() { echo -ne '\e[2 q'; }
+
+# Smart Vim Function
+vim() {
+  local real_path=$(realpath "$1" 2>/dev/null)
+  [[ -z "$real_path" ]] && nvim "$1" && return
+
+  local dir
+  [[ -f "$real_path" ]] && dir=$(dirname "$real_path") || dir="$real_path"
+
+  (cd "$dir" && nvim "$real_path")
+}
+
+# Custom Ctrl+W to delete words stopping at slashes
+my-backward-kill-word() {
+    local WORDCHARS='*?_-.[]~=&;!#$%^(){}<>\\'
+    if [[ "$LBUFFER" =~ '/$' ]]; then
+        zle backward-delete-char
+    else
+        zle backward-kill-word
+    fi
+}
+zle -N my-backward-kill-word
+bindkey '^W' my-backward-kill-word
+
+
+export $(cat $HOME/.config/zshrc/.env | xargs)
+
+# # Setup up workspace
+# curl -fsSL https://claude.ai/install.sh | bash
+# npm install -g @google/gemini-cli
+# npm install -g @augmentcode/auggie

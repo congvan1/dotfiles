@@ -33,7 +33,7 @@ contexts = [
   { context_pattern = "vng-dev", style = "green", context_alias = "dev", symbol = "☸ " },
   { context_pattern = "vng-stg", style = "yellow", context_alias = "stg", symbol = "☸ " },
   { context_pattern = "vng-ctl", style = "yellow", context_alias = "ctl", symbol = "☸ " },
-  { context_pattern = "vng-prd", style = "red", context_alias = "prd", symbol = "☸ " },
+  { context_pattern = "vng-prd", style = "red", context_alias = "prd", symbol = "💀 " },
 ]
 
 [cmd_duration]
