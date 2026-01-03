@@ -5,7 +5,7 @@ return {
     opts = {
       fuzzy = {
         -- Use Lua implementation instead of Rust
-        use_fre = true,
+        implementation = "lua",
         use_proximity = true,
       },
     },

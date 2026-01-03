@@ -22,11 +22,19 @@
       nix.enable = false;
       
       nix.settings.experimental-features = "nix-command flakes";
-      programs.zsh.enable = true;  # default shell on catalina
+      programs.zsh = {
+        enable = true;  # default shell on catalina
+        interactiveShellInit = ''
+          if [ -d "$HOME/LOCAL/working-space" ]; then
+             cd "$HOME/LOCAL/working-space"
+          fi
+        '';
+      };
       system.configurationRevision = self.rev or self.dirtyRev or null;
       system.stateVersion = 4;
       nixpkgs.hostPlatform = "aarch64-darwin";
       security.pam.services.sudo_local.touchIdAuth = true;
+      security.pam.services.sudo_local.reattach = true; # Enable reattach for Tmux support
       system.primaryUser = "van";
       users.users.van.home = "/Users/van";
       home-manager.backupFileExtension = "backup";
@@ -64,8 +72,8 @@
         
         # Global macOS settings
         NSGlobalDomain.AppleShowAllExtensions = true;
-        NSGlobalDomain.InitialKeyRepeat = 5; # Fast key repeat
-        NSGlobalDomain.KeyRepeat = 1; # Very fast key repeat
+        NSGlobalDomain.InitialKeyRepeat = 10; # Fast key repeat
+        NSGlobalDomain.KeyRepeat = 3; # Very fast key repeat
         NSGlobalDomain.ApplePressAndHoldEnabled = false; # Disable press-and-hold for keys
         NSGlobalDomain.NSAutomaticCapitalizationEnabled = false;
         NSGlobalDomain.NSAutomaticDashSubstitutionEnabled = false;
@@ -74,11 +82,12 @@
         NSGlobalDomain.NSAutomaticSpellingCorrectionEnabled = false;
         NSGlobalDomain.NSNavPanelExpandedStateForSaveMode = true;
         NSGlobalDomain.NSNavPanelExpandedStateForSaveMode2 = true;
-        NSGlobalDomain."com.apple.swipescrolldirection" = true; # Natural scrolling
+        NSGlobalDomain."com.apple.swipescrolldirection" = false; # Traditional scrolling (reversed)
         
         # Trackpad settings
         trackpad.Clicking = true; # Tap to click
-        trackpad.TrackpadThreeFingerDrag = true;
+        trackpad.TrackpadThreeFingerDrag = false; # Disable drag (prevents text selection on move)
+        trackpad.TrackpadThreeFingerHorizSwipeGesture = 2; # Enable 3-finger swipe left/right for switching spaces
         
         # Menu bar
         menuExtraClock.ShowSeconds = true;
@@ -95,114 +104,8 @@
         "FelixKratz/formulae"
       ];
       
-      homebrew.brews = [
-        # Essential Nix Tools
-        "direnv"               # Environment management
-        "starship"             # Prompt (via Homebrew)
-        "zsh-autosuggestions"
-        "zsh-syntax-highlighting"
-        
-        # Development Toolchains
-        "rustup"
-        "go"
-        "gcc"
-        "cmake"
-        "pkg-config"
-        "make"
-        "tldr"
-        "stow"
-        "node"              # Node.js (includes npm)
-          
-        # Terminal & Shell
-        "tmux"
-        "nushell"
-        "carapace"
-        "sketchybar"
-        
-        
-        # File Management & Navigation
-        "tree"
-        "eza"               # Modern ls
-        "bat"               # Modern cat
-        "fd"                # Modern find
-        "fzf"               # Fuzzy finder
-        "zoxide"            # Smart cd
-        "ranger"            # File manager
-        "ripgrep"           # Fast grep
-        
-        # Git & Version Control
-        "git"
-        "gh"                # GitHub CLI
-        "pcre2"             # Git dependency (regex library)
-        "diff-so-fancy"
-        
-        # Kubernetes Tools
-        "kubectl"
-        "kubectx"
-        "kubernetes-helm"
-        "kubeseal"
-        "k9s"
-        
-        # Container & VM Tools
-        "docker"
-        "docker-compose"
-        "qemu"              # Emulator
-        
-        # Audio/Video
-        "ffmpeg"
-        "neovim"
-        
-        # Network & Security Tools
-        "nmap"
-        "xh"                # Modern HTTP client
-        "ffuf"              # Web fuzzer
-        "gobuster"          # Directory bruteforcer
-        
-        # System Monitoring
-        "htop"
-        "btop"
-        
-        # Network Tools
-        "dnsmasq"           # DNS/DHCP server
-        "wget"
-        "curl"
-        
-        # Data Processing
-        "jq"                # JSON processor
-        "yq"                # YAML processor
-        
-        # Utilities
-        "sshs"              # SSH manager
-        "glow"              # Markdown renderer
-        "atuin"             # Shell history
-        "cmatrix"           # Matrix effect
-        
-        # AI Agents
-        "aichat"            # All-in-one LLM CLI (GPT, Claude, Gemini)
-        
-        # DevOps & Infrastructure
-        "terraform"
-        "ansible"
-        "python@3.12"       # Python for Ansible
-        "sshpass"           # SSH password authentication
-        
-        # Database Clients
-        "libpq"             # PostgreSQL client only (psql)
-        "mysql-client"      # MySQL client only
-        "redis"             # Redis client
-        "mongosh"           # MongoDB shell
-        
-        # Cloud Tools
-        "minio/stable/mc"   # MinIO mc
-        "awscli"            # AWS CLI
-      ];
-      
-      homebrew.casks = [
-        "font-jetbrains-mono-nerd-font"
-        "maccy"             # Clipboard manager
-        "aerospace"         # Tiling window manager
-        "multipass"         # Ubuntu VMs
-      ];
+      homebrew.brews = (import ./packages.nix).brews;
+      homebrew.casks = (import ./packages.nix).casks;
     };
   in
   {

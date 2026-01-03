@@ -217,7 +217,16 @@ bindkey '^W' my-backward-kill-word
 
 export $(cat $HOME/.config/zshrc/.env | xargs)
 
-# # Setup up workspace
-# curl -fsSL https://claude.ai/install.sh | bash
-# npm install -g @google/gemini-cli
-# npm install -g @augmentcode/auggie
+export scripts_path="/Users/van/LOCAL/working-space/Cellutions/MY-ENV/scripts"
+alias puller="bash $scripts_path/git-puller.sh"
+alias slackmr="bash $scripts_path/mr-slack.sh"
+
+# ProxyPal - Amp CLI Configuration (alternative to settings.json)
+export AMP_URL="http://localhost:8317"
+export AMP_API_KEY="proxypal-local"
+
+# For Amp cloud features, get your API key from https://ampcode.com/settings
+# and add it to ProxyPal Settings > Amp CLI Integration > Amp API Key
+
+# Amp CLI
+export PATH="/Users/van/.amp/bin:$PATH"

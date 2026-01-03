@@ -1,6 +1,7 @@
 .DS_Store
 **/*.bak
 **/.env
+**/k8s-ssh-config.txt
 tmux/plugins/
 raycast
 fzf

@@ -23,7 +23,7 @@
     # ".config/nvim".source = ~/dotfiles/nvim;
     # ".config/nix".source = ~/dotfiles/nix;
     # ".config/nix-darwin".source = ~/dotfiles/nix-darwin;
-    # ".config/tmux".source = ~/dotfiles/tmux;
+    ".config/tmux".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/tmux";
     # ".config/ghostty".source = ~/dotfiles/ghostty;
     # ".config/aerospace".source = ~/dotfiles/aerospace;
     # ".config/sketchybar".source = ~/dotfiles/sketchybar;
@@ -41,6 +41,9 @@
   programs.zsh = {
     enable = true;
     initContent = ''
+      # Fix Neovim terminal staircasing
+      stty onlcr
+
       # Add any additional configurations here
       export PATH=/run/current-system/sw/bin:$HOME/.nix-profile/bin:$PATH
       if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
