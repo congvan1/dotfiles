@@ -99,11 +99,7 @@
       homebrew.onActivation.autoUpdate = true;
       homebrew.onActivation.upgrade = true;
 
-      homebrew.taps = [
-        "nikitabobko/tap"
-        "FelixKratz/formulae"
-      ];
-      
+      homebrew.taps = (import ./packages.nix).taps;
       homebrew.brews = (import ./packages.nix).brews;
       homebrew.casks = (import ./packages.nix).casks;
     };

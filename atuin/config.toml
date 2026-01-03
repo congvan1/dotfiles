@@ -67,11 +67,11 @@ style = "compact"
 inline_height = 20    # Better than 0 (full screen)
 
 ## Invert the UI - put the search bar at the top , Default to `false`
-invert = true         # Easier to read at bottom of screen
+invert = false        # Search bar at bottom, history flows up
 
 ## enable or disable showing a preview of the selected command
 ## useful when the command is longer than the terminal width and is cut off
-show_preview = true   # Very useful to see full command
+show_preview = false   # Very useful to see full command
 
 ## what to do when the escape key is pressed when searching
 ## possible values: return-original, return-query
@@ -199,7 +199,7 @@ enter_accept = false
 # scroll_exits = false
 
 # Disable up arrow binding - use Ctrl+R for Atuin search instead
-up_arrow = false
+# up_arrow = false
 
 [sync]
 # Enable sync v2 by default

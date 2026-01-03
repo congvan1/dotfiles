@@ -1,4 +1,10 @@
 {
+  taps = [
+    "nikitabobko/tap"
+    "FelixKratz/formulae"
+    "lbjlaq/antigravity-manager"
+  ];
+
   brews = [
     # Essential Nix Tools
     "pam-reattach"         # Fix TouchID in Tmux
@@ -85,6 +91,7 @@
     # AI Agents
     "aichat"            # All-in-one LLM CLI (GPT, Claude, Gemini)
     "cliproxyapi"
+    "ollama"
     
     # DevOps & Infrastructure
     "terraform"
@@ -111,5 +118,6 @@
     "google-chrome"
     "chromedriver"
     "cloudflare-warp"
+    "antigravity-tools"
   ];
 }
