@@ -39,6 +39,7 @@
     "zoxide"            # Smart cd
     "ranger"            # File manager
     "ripgrep"           # Fast grep
+    "ncdu"              # Disk usage analyzer
     
     # Git & Version Control
     "git"
