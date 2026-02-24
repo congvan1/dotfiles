@@ -17,13 +17,12 @@
     "rustup"
     "go"
     "gcc"
-    "cmake"
     "pkg-config"
-    "make"
     "tldr"
     "stow"
     "node"
     "wireshark"
+    "speedtest-cli"
       
     # Terminal & Shell
     "tmux"
@@ -44,13 +43,15 @@
     # Git & Version Control
     "git"
     "gh"                # GitHub CLI
+    "glab"              # GitLab CLI
     "pcre2"             # Git dependency (regex library)
     "diff-so-fancy"
     
     # Kubernetes Tools
     "kubectl"
     "kubectx"
-    "kubernetes-helm"
+    "kustomize"
+    "helm@3"
     "kubeseal"
     "k9s"
     
@@ -98,12 +99,15 @@
     "ansible"
     "python@3.12"       # Python for Ansible
     "sshpass"           # SSH password authentication
+    "ruby"
     
     # Database Clients
     "libpq"             # PostgreSQL client only (psql)
     "mysql-client"      # MySQL client only
     "redis"             # Redis client
     "mongosh"           # MongoDB shell
+    "postgresql"
+    "cassandra"
     
     # Cloud Tools
     "minio/stable/mc"   # MinIO mc
@@ -119,5 +123,9 @@
     "chromedriver"
     "cloudflare-warp"
     "antigravity-tools"
+    "antigravity"
+    "notion"
+    "ghostty"           # Modern terminal emulator
+    "binary-ninja-free"
   ];
 }

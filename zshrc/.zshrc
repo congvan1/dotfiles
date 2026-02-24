@@ -35,6 +35,9 @@ alias la=tree
 alias cat=bat
 alias C=pbcopy
 alias tf=terraform
+alias l=less
+alias d=docker
+alias dc=docker-compose
 
 # Git
 alias gc="git commit -m"
@@ -177,7 +180,7 @@ fi
 export PATH="$PATH:/nix/var/nix/profiles/default/bin"
 
 eval "$(zoxide init zsh)"
-eval "$(atuin init zsh)"
+eval "$(atuin init zsh --disable-up-arrow)"
 eval "$(direnv hook zsh)"
 
 # Force Block Cursor ALWAYS (even in vi-mode)
@@ -200,6 +203,15 @@ vim() {
   [[ -f "$real_path" ]] && dir=$(dirname "$real_path") || dir="$real_path"
 
   (cd "$dir" && nvim "$real_path")
+}
+
+syncmain() {
+  set -e
+  git fetch origin
+  git switch main
+  git pull --ff-only
+  git switch -
+  git merge origin/main
 }
 
 # Custom Ctrl+W to delete words stopping at slashes
@@ -230,3 +242,5 @@ export AMP_API_KEY="proxypal-local"
 
 # Amp CLI
 export PATH="/Users/van/.amp/bin:$PATH"
+
+export PATH="/opt/homebrew/opt/helm@3/bin:$PATH"

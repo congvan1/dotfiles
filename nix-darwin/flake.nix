@@ -23,12 +23,7 @@
       
       nix.settings.experimental-features = "nix-command flakes";
       programs.zsh = {
-        enable = true;  # default shell on catalina
-        interactiveShellInit = ''
-          if [ -d "$HOME/LOCAL/working-space" ]; then
-             cd "$HOME/LOCAL/working-space"
-          fi
-        '';
+        enable = true;
       };
       system.configurationRevision = self.rev or self.dirtyRev or null;
       system.stateVersion = 4;
@@ -83,6 +78,7 @@
         NSGlobalDomain.NSNavPanelExpandedStateForSaveMode = true;
         NSGlobalDomain.NSNavPanelExpandedStateForSaveMode2 = true;
         NSGlobalDomain."com.apple.swipescrolldirection" = false; # Traditional scrolling (reversed)
+        NSGlobalDomain.AppleInterfaceStyle = "Dark"; # Dark Mode
         
         # Trackpad settings
         trackpad.Clicking = true; # Tap to click
@@ -90,14 +86,16 @@
         trackpad.TrackpadThreeFingerHorizSwipeGesture = 2; # Enable 3-finger swipe left/right for switching spaces
         
         # Menu bar
-        menuExtraClock.ShowSeconds = true;
+        menuExtraClock.ShowSeconds = false;
+        menuExtraClock.ShowDate = 0;
+        menuExtraClock.Show24Hour = true;
       };
 
       # Homebrew Integration
       homebrew.enable = true;
       homebrew.onActivation.cleanup = "zap";  # Remove all unmanaged packages
-      homebrew.onActivation.autoUpdate = true;
-      homebrew.onActivation.upgrade = true;
+      homebrew.onActivation.autoUpdate = false;
+      homebrew.onActivation.upgrade = false;
 
       homebrew.taps = (import ./packages.nix).taps;
       homebrew.brews = (import ./packages.nix).brews;

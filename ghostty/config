@@ -1,8 +1,11 @@
 font-family = "JetBrainsMonoNerdFontMono-Regular"
-font-size = 12
+font-size = 11
 background-blur-radius = 20
 mouse-hide-while-typing = true
-window-decoration = false
+# window-decoration needs to be enabled for fullscreen to work on macOS
+window-decoration = auto
+# To hide the titlebar without removing window borders/rounded corners:
+macos-titlebar-style = hidden
 macos-option-as-alt = true
 
 # Cursor configuration
