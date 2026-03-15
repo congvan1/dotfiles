@@ -244,3 +244,26 @@ export AMP_API_KEY="proxypal-local"
 export PATH="/Users/van/.amp/bin:$PATH"
 
 export PATH="/opt/homebrew/opt/helm@3/bin:$PATH"
+
+install_apple_container() {
+  if command -v container >/dev/null 2>&1; then
+    echo "✔ Apple container already installed"
+    container system start
+    return
+  fi
+
+  VERSION="0.10.0"
+  PKG="container-${VERSION}-installer-signed.pkg"
+  URL="https://github.com/apple/container/releases/download/${VERSION}/${PKG}"
+  TMP="/tmp/${PKG}"
+
+  echo "⬇ Downloading Apple container ${VERSION}..."
+  curl -L "$URL" -o "$TMP"
+
+  echo "📦 Installing..."
+  sudo installer -pkg "$TMP" -target /
+
+  echo "✔ Apple container installed successfully"
+}
+
+install_apple_container

@@ -55,11 +55,14 @@
     "helm@3"
     "kubeseal"
     "k9s"
+    "linkerd"
     
     # Container & VM Tools
     "docker"
     "docker-compose"
     "qemu"              # Emulator
+    "lima"
+    "dive"
     
     # Audio/Video
     "ffmpeg"
