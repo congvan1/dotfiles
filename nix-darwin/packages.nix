@@ -63,6 +63,7 @@
     "qemu"              # Emulator
     "lima"
     "dive"
+    "colima"            # Lightweight container runtime
     
     # Audio/Video
     "ffmpeg"
@@ -97,6 +98,7 @@
     "aichat"            # All-in-one LLM CLI (GPT, Claude, Gemini)
     "cliproxyapi"
     "ollama"
+    "ctx7"
     
     # DevOps & Infrastructure
     "terraform"
@@ -121,12 +123,10 @@
   casks = [
     "font-jetbrains-mono-nerd-font"
     "maccy"             # Clipboard manager
-    "aerospace"         # Tiling window manager
     "multipass"         # Ubuntu VMs
     "google-chrome"
     "chromedriver"
     "cloudflare-warp"
-    "antigravity-tools"
     "antigravity"
     "notion"
     "ghostty"           # Modern terminal emulator

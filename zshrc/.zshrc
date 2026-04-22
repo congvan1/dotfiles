@@ -266,4 +266,4 @@ install_apple_container() {
   echo "✔ Apple container installed successfully"
 }
 
-install_apple_container
+# install_apple_container
