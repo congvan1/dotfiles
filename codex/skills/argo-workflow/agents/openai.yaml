@@ -1,0 +1,4 @@
+interface:
+  display_name: "Argo Workflow"
+  short_description: "Author repo-style Argo WorkflowTemplate YAML"
+  default_prompt: "Use $argo-workflow to create or update Argo Workflow YAML that matches the reusable-argo-workflow-templates and ops-automation patterns in the current workspace."

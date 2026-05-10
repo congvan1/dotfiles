@@ -1,0 +1,4 @@
+interface:
+  display_name: "Confluence Docs"
+  short_description: "Read and write Confluence docs safely"
+  default_prompt: "Use $confluence-docs to read or update Confluence pages safely."

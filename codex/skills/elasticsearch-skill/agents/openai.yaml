@@ -1,0 +1,4 @@
+interface:
+  display_name: "Elasticsearch Skill"
+  short_description: "Query Elasticsearch logs for RCA"
+  default_prompt: "Use $elasticsearch-skill to query Elasticsearch logs first, then analyze the results for root cause."

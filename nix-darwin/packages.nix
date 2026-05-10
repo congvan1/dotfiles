@@ -12,7 +12,7 @@
     "starship"             # Prompt (via Homebrew)
     "zsh-autosuggestions"
     "zsh-syntax-highlighting"
-    
+
     # Development Toolchains
     "rustup"
     "go"
@@ -23,13 +23,13 @@
     "node"
     "wireshark"
     "speedtest-cli"
-      
+
     # Terminal & Shell
     "tmux"
     "nushell"
     "carapace"
     "sketchybar"
-    
+
     # File Management & Navigation
     "tree"
     "eza"               # Modern ls
@@ -40,14 +40,14 @@
     "ranger"            # File manager
     "ripgrep"           # Fast grep
     "ncdu"              # Disk usage analyzer
-    
+
     # Git & Version Control
     "git"
     "gh"                # GitHub CLI
     "glab"              # GitLab CLI
     "pcre2"             # Git dependency (regex library)
     "diff-so-fancy"
-    
+
     # Kubernetes Tools
     "kubectl"
     "kubectx"
@@ -56,57 +56,57 @@
     "kubeseal"
     "k9s"
     "linkerd"
-    
+
     # Container & VM Tools
-    "docker"
+    # "docker"            # Using colima is more Lightweight
     "docker-compose"
     "qemu"              # Emulator
+    "dive"              # Exploring image, layers, size
     "lima"
-    "dive"
     "colima"            # Lightweight container runtime
-    
+
     # Audio/Video
     "ffmpeg"
     "neovim"
-    
+
     # Network & Security Tools
     "nmap"
     "xh"                # Modern HTTP client
     "ffuf"              # Web fuzzer
     "gobuster"          # Directory bruteforcer
-    
+
     # System Monitoring
     "htop"
     "btop"
-    
+
     # Network Tools
     "dnsmasq"           # DNS/DHCP server
     "wget"
     "curl"
-    
+
     # Data Processing
     "jq"                # JSON processor
     "yq"                # YAML processor
-    
+
     # Utilities
     "sshs"              # SSH manager
     "glow"              # Markdown renderer
     "atuin"             # Shell history
     "cmatrix"           # Matrix effect
-    
+
     # AI Agents
     "aichat"            # All-in-one LLM CLI (GPT, Claude, Gemini)
     "cliproxyapi"
     "ollama"
     "ctx7"
-    
+
     # DevOps & Infrastructure
     "terraform"
     "ansible"
     "python@3.12"       # Python for Ansible
     "sshpass"           # SSH password authentication
     "ruby"
-    
+
     # Database Clients
     "libpq"             # PostgreSQL client only (psql)
     "mysql-client"      # MySQL client only
@@ -114,7 +114,7 @@
     "mongosh"           # MongoDB shell
     "postgresql"
     "cassandra"
-    
+
     # Cloud Tools
     "minio/stable/mc"   # MinIO mc
     "awscli"            # AWS CLI
