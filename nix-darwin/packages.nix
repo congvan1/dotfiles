@@ -3,6 +3,7 @@
     "nikitabobko/tap"
     "FelixKratz/formulae"
     "lbjlaq/antigravity-manager"
+    "minio/stable"
   ];
 
   brews = [
@@ -17,7 +18,7 @@
     "rustup"
     "go"
     "gcc"
-    "pkg-config"
+    "pkgconf"
     "tldr"
     "stow"
     "node"
@@ -49,7 +50,7 @@
     "diff-so-fancy"
 
     # Kubernetes Tools
-    "kubectl"
+    "kubernetes-cli"
     "kubectx"
     "kustomize"
     "helm@3"
@@ -58,7 +59,7 @@
     "linkerd"
 
     # Container & VM Tools
-    # "docker"            # Using colima is more Lightweight
+    "docker"            
     "docker-compose"
     "qemu"              # Emulator
     "dive"              # Exploring image, layers, size
@@ -113,15 +114,16 @@
     "mysql-client"      # MySQL client only
     "redis"             # Redis client
     "mongosh"           # MongoDB shell
-    "postgresql"
+    "postgresql@18"
     "cassandra"
 
     # Cloud Tools
-    "minio/stable/mc"   # MinIO mc
+    "minio/stable/mc"   # MinIO client
     "awscli"            # AWS CLI
   ];
 
   casks = [
+    "codex"
     "font-jetbrains-mono-nerd-font"
     "maccy"             # Clipboard manager
     "multipass"         # Ubuntu VMs

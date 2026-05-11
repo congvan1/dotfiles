@@ -20,6 +20,12 @@
       
       # Disable nix-darwin's Nix management (using Determinate Nix)
       nix.enable = false;
+
+      # Make Homebrew-installed tools visible to non-interactive shells and services.
+      environment.systemPath = [
+        "/opt/homebrew/bin"
+        "/opt/homebrew/sbin"
+      ];
       
       nix.settings.experimental-features = "nix-command flakes";
       programs.zsh = {
@@ -93,7 +99,7 @@
 
       # Homebrew Integration
       homebrew.enable = true;
-      homebrew.onActivation.cleanup = "zap";  # Remove all unmanaged packages
+      homebrew.onActivation.cleanup = "uninstall";  # Remove unmanaged apps without zapping app data
       homebrew.onActivation.autoUpdate = false;
       homebrew.onActivation.upgrade = false;
 
