@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prometheus Skill"
+  short_description: "Query VTVPrime Prometheus metrics"
+  default_prompt: "Use $prometheus-skill to query VTVPrime Prometheus metrics and analyze Pulsar broker, backlog, storage, or BookKeeper signals."

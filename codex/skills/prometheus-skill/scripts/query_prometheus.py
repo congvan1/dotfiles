@@ -403,29 +403,42 @@ def render_csv_output(result: dict[str, Any]) -> str:
     if not series_list:
         return "timestamp,value"
 
+    label_names = sorted(
+        {
+            label_name
+            for series in series_list
+            for label_name in series.get("metric", {}).keys()
+        }
+    )
     first_series = series_list[0]
     if "values" in first_series:
-        return render_range_csv(first_series)
+        return render_range_csv(series_list, label_names)
     if "value" in first_series:
-        return render_instant_csv(first_series)
+        return render_instant_csv(series_list, label_names)
     raise ValueError("Unsupported Prometheus response shape for CSV output.")
 
 
-def render_range_csv(series: dict[str, Any]) -> str:
+def render_range_csv(series_list: list[dict[str, Any]], label_names: list[str]) -> str:
     output_buffer = io.StringIO()
     writer = csv.writer(output_buffer, lineterminator="\n")
-    writer.writerow(["timestamp", "value"])
-    for timestamp, value in series["values"]:
-        writer.writerow([timestamp, value])
+    writer.writerow(["timestamp", *label_names, "value"])
+    for series in series_list:
+        metric_labels = series.get("metric", {})
+        label_values = [metric_labels.get(label_name, "") for label_name in label_names]
+        for timestamp, value in series["values"]:
+            writer.writerow([timestamp, *label_values, value])
     return output_buffer.getvalue().rstrip()
 
 
-def render_instant_csv(series: dict[str, Any]) -> str:
+def render_instant_csv(series_list: list[dict[str, Any]], label_names: list[str]) -> str:
     output_buffer = io.StringIO()
     writer = csv.writer(output_buffer, lineterminator="\n")
-    writer.writerow(["timestamp", "value"])
-    timestamp, value = series["value"]
-    writer.writerow([timestamp, value])
+    writer.writerow(["timestamp", *label_names, "value"])
+    for series in series_list:
+        metric_labels = series.get("metric", {})
+        label_values = [metric_labels.get(label_name, "") for label_name in label_names]
+        timestamp, value = series["value"]
+        writer.writerow([timestamp, *label_values, value])
     return output_buffer.getvalue().rstrip()
 
 
