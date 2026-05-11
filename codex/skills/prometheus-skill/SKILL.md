@@ -1,11 +1,13 @@
 ---
 name: prometheus-skill
-description: Use when querying Prometheus metrics from the VTVPrime environments. Starts with dev, stg, and prd Prometheus endpoints, includes a scalable metric catalog, and currently ships with Apache Pulsar 3.0.x metric guidance for broker, storage, backlog, load, and BookKeeper client analysis.
+description: Query Prometheus metrics from the VTVPrime environments. Use when Codex needs live metric data from dev, stg, or prd Prometheus, wants to inspect metric values or time ranges, needs help writing PromQL, or wants to use the bundled metric catalog. This skill currently includes Apache Pulsar guidance as one catalog domain, but it is not limited to Pulsar-only tasks.
 ---
 
 # Prometheus Skill
 
 Use this skill when the user wants live metrics from Prometheus instead of log-only analysis.
+
+The runtime may display this skill as `notion-skills:prometheus-skill` because of how your local skill bundle is namespaced. That prefix is only a discovery label. This skill is not related to Notion.
 
 ## Endpoints
 
@@ -18,7 +20,7 @@ Use this skill when the user wants live metrics from Prometheus instead of log-o
 1. Pick the environment first: `dev`, `stg`, or `prd`.
 2. If the user names a known Pulsar metric, describe it from the catalog before querying it.
 3. Prefer the local helper:
-   `python3 ~/.codex/skills/prometheus-skill/scripts/query_prometheus.py`
+   `python3 /Users/van/dotfiles/codex/skills/prometheus-skill/scripts/query_prometheus.py`
 4. Prefer `--output csv` for LLM analysis because it removes the Prometheus response envelope and reduces token usage.
 5. Use `catalog` subcommands to discover supported component metrics.
 6. Use `query metric` when the metric exists in the catalog and `query promql` only for custom expressions.
@@ -29,32 +31,32 @@ Use this skill when the user wants live metrics from Prometheus instead of log-o
 
 ```bash
 # List supported Pulsar metrics
-python3 ~/.codex/skills/prometheus-skill/scripts/query_prometheus.py \
+python3 /Users/van/dotfiles/codex/skills/prometheus-skill/scripts/query_prometheus.py \
   catalog list --component pulsar
 
 # Explain one metric
-python3 ~/.codex/skills/prometheus-skill/scripts/query_prometheus.py \
+python3 /Users/van/dotfiles/codex/skills/prometheus-skill/scripts/query_prometheus.py \
   catalog describe --component pulsar --metric pulsar_broker_rate_in
 
 # Query a catalog metric with its default PromQL
-python3 ~/.codex/skills/prometheus-skill/scripts/query_prometheus.py \
+python3 /Users/van/dotfiles/codex/skills/prometheus-skill/scripts/query_prometheus.py \
   --output csv \
   query metric --env prd --component pulsar --metric pulsar_broker_rate_in
 
 # Query a time range
-python3 ~/.codex/skills/prometheus-skill/scripts/query_prometheus.py \
+python3 /Users/van/dotfiles/codex/skills/prometheus-skill/scripts/query_prometheus.py \
   --output csv \
   query range --env prd --component pulsar --metric pulsar_broker_msg_backlog \
   --start 2026-04-07T00:00:00+07:00 --end 2026-04-07T06:00:00+07:00 --step 5m
 
 # Query around a timestamp with the default 1-minute step
-python3 ~/.codex/skills/prometheus-skill/scripts/query_prometheus.py \
+python3 /Users/van/dotfiles/codex/skills/prometheus-skill/scripts/query_prometheus.py \
   --output csv \
   query metric --env prd --component pulsar --metric pulsar_broker_rate_in \
   --anchor-time 2026-04-07T00:30:00+07:00 --backward 20m --forward 20m
 
 # Run custom PromQL
-python3 ~/.codex/skills/prometheus-skill/scripts/query_prometheus.py \
+python3 /Users/van/dotfiles/codex/skills/prometheus-skill/scripts/query_prometheus.py \
   --output csv \
   query promql --env stg --expr 'sum by (cluster) (pulsar_broker_rate_out)'
 ```
@@ -82,7 +84,7 @@ python3 ~/.codex/skills/prometheus-skill/scripts/query_prometheus.py \
 ## When to read more
 
 - Pulsar metric registry:
-  [pulsar_metrics.py](/Users/van/.codex/skills/prometheus-skill/references/pulsar_metrics.py)
+  [pulsar_metrics.py](/Users/van/dotfiles/codex/skills/prometheus-skill/references/pulsar_metrics.py)
 - Query/catalog implementation:
-  [catalog.py](/Users/van/.codex/skills/prometheus-skill/scripts/catalog.py)
-  [query_prometheus.py](/Users/van/.codex/skills/prometheus-skill/scripts/query_prometheus.py)
+  [catalog.py](/Users/van/dotfiles/codex/skills/prometheus-skill/scripts/catalog.py)
+  [query_prometheus.py](/Users/van/dotfiles/codex/skills/prometheus-skill/scripts/query_prometheus.py)

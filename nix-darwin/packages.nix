@@ -132,6 +132,7 @@
     "cloudflare-warp"
     "antigravity"
     "notion"
+    "openvpn-connect"
     "ghostty"           # Modern terminal emulator
     "binary-ninja-free"
   ];
