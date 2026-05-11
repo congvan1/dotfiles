@@ -1,0 +1,74 @@
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: goms
+  labels:
+    app: goms
+    component: cli
+    environment: production
+spec:
+  forProvider:
+    # === CƠ BẢN ===
+    realmIdRef:
+      name: idp
+    clientId: goms
+    name: "GOMS CLI Tool"
+    description: "CLI tool for GOMS service compatibility validation"
+
+    # === LOẠI CLIENT ===
+    # PUBLIC là đúng cho CLI (không thể giữ secret an toàn)
+    accessType: PUBLIC
+
+    # === FLOW ===
+    # Chỉ bật Device Grant cho CLI (không có browser redirect)
+    standardFlowEnabled: false
+    implicitFlowEnabled: false
+    directAccessGrantsEnabled: false
+    oauth2DeviceAuthorizationGrantEnabled: true
+
+    # === TOKEN ===
+    useRefreshTokens: true
+    serviceAccountsEnabled: false
+
+    # === CONSENT ===
+    # Bắt buộc user đồng ý lần đầu (bảo mật + minh bạch)
+    consentRequired: true
+
+    # === TIMEOUTS ===
+    # Session cho CLI (24h idle, 7 ngày tối đa)
+    clientSessionIdleTimeout: "86400" # 24 giờ
+    clientSessionMaxLifetime: "604800" # 7 ngày
+
+    defaultClientScopes:
+      - "email"
+      - "profile"
+      - "roles"
+
+    # === ATTRIBUTES (cải thiện UX) ===
+    # Lưu ý: Các attribute này phụ thuộc vào phiên bản Keycloak
+    # Nếu không hoạt động, có thể bỏ qua hoặc config sau bằng API
+    attributes:
+      # Device Grant settings
+      device_code_lifespan: "900" # 15 phút (mặc định 60s quá ngắn)
+      polling_interval: "3" # Gợi ý polling interval cho CLI
+
+      # Custom verification URI (ngắn gọn hơn)
+      device_verification_uri: "https://idp-auth.vtvprime.vn/device"
+
+      # Branding cho consent screen
+      display_on_consent_screen: "GOMS CLI"
+      # logo_uri: "https://goms.vtvprime.vn/logo.png"
+      # policy_uri: "https://goms.vtvprime.vn/privacy"
+      # tos_uri: "https://goms.vtvprime.vn/terms"
+
+      # Consent screen text (khắc phục lỗi ${rolesScopeConsentText})
+      consent_screen_text: "GOMS CLI needs access to verify service compatibility"
+
+    # === WEB ORIGINS & REDIRECT URIS ===
+    # KHÔNG CẦN cho Device Grant thuần túy, nhưng để tránh cảnh báo:
+    validRedirectUris: []
+    webOrigins: []
+
+  # === PROVIDER CONFIG ===
+  providerConfigRef:
+    name: keycloak-provider-config
