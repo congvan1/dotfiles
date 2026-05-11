@@ -101,7 +101,8 @@
     "ctx7"
 
     # DevOps & Infrastructure
-    "terraform"
+    "tfenv"             # Terraform version manager
+    "terragrunt"        # Terraform wrapper/orchestrator
     "ansible"
     "python@3.12"       # Python for Ansible
     "sshpass"           # SSH password authentication

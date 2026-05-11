@@ -100,6 +100,60 @@
       homebrew.taps = (import ./packages.nix).taps;
       homebrew.brews = (import ./packages.nix).brews;
       homebrew.casks = (import ./packages.nix).casks;
+
+      system.activationScripts.install9router.text = ''
+        echo "setting up 9router npm CLI..."
+
+        /bin/mkdir -p /Users/van/.npm-global /Users/van/.9router/logs /Users/van/.config/9router
+        /usr/sbin/chown -R van:staff /Users/van/.npm-global /Users/van/.9router /Users/van/.config/9router
+
+        if [ ! -f /Users/van/.config/9router/env ]; then
+          /bin/cat > /Users/van/.config/9router/env <<'EOF'
+# Local 9router runtime settings. Keep secrets out of git.
+PORT=20128
+HOSTNAME=localhost
+DATA_DIR=/Users/van/.9router
+BASE_URL=http://localhost:20128
+NEXT_PUBLIC_BASE_URL=http://localhost:20128
+CLOUD_URL=https://9router.com
+NEXT_PUBLIC_CLOUD_URL=https://9router.com
+
+# Optional local dashboard password. Change before exposing beyond localhost.
+# INITIAL_PASSWORD=change-me
+
+# Optional request logs for debugging only.
+# ENABLE_REQUEST_LOGS=false
+EOF
+          /usr/sbin/chown van:staff /Users/van/.config/9router/env
+          /bin/chmod 600 /Users/van/.config/9router/env
+        fi
+
+        if [ -x /opt/homebrew/bin/npm ]; then
+          if ! /usr/bin/sudo -u van /usr/bin/env HOME=/Users/van npm_config_prefix=/Users/van/.npm-global /opt/homebrew/bin/npm install -g 9router@0.4.29 --no-audit --no-fund; then
+            echo "warning: failed to install 9router@0.4.29 via npm; launchd will retry npm install on first run"
+          fi
+        else
+          echo "warning: /opt/homebrew/bin/npm not found yet; install Homebrew node and rerun darwin-rebuild"
+        fi
+      '';
+
+      launchd.user.agents."9router" = {
+        serviceConfig = {
+          Label = "dev.decolua.9router";
+          ProgramArguments = [
+            "/Users/van/dotfiles/scripts/9router-launch.sh"
+            "serve"
+          ];
+          RunAtLoad = true;
+          KeepAlive = true;
+          StandardOutPath = "/Users/van/.9router/logs/launchd.out.log";
+          StandardErrorPath = "/Users/van/.9router/logs/launchd.err.log";
+          EnvironmentVariables = {
+            HOME = "/Users/van";
+            PATH = "/Users/van/.npm-global/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+          };
+        };
+      };
     };
   in
   {
