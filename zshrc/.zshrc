@@ -6,7 +6,9 @@ autoload bashcompinit && bashcompinit
 autoload -Uz compinit
 compinit -d "$HOME/.cache/zsh/zcompdump"
 zstyle ':completion:*' cache-path "$HOME/.cache/zsh/zcompdump"
-source <(kubectl completion zsh)
+if command -v kubectl >/dev/null 2>&1; then
+    source <(kubectl completion zsh)
+fi
 complete -C '/usr/local/bin/aws_completer' aws
 
 # Safely load zsh-autosuggestions
@@ -79,13 +81,16 @@ alias v="nvim"
 # Nmap
 alias nm="nmap -sC -sV -oN nmap"
 
-export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omer/.vimpkg/bin:${GOPATH}/bin:$HOME/.cargo/bin"
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omer/.vimpkg/bin:${GOPATH}/bin:$HOME/.cargo/bin"
 
 alias cl='clear'
 
 # K8S
 export KUBECONFIG="$HOME/.kube/config"
 alias k="kubectl"
+if (( $+functions[__start_kubectl] )); then
+    compdef __start_kubectl k
+fi
 alias ka="kubectl apply -f"
 alias kg="kubectl get"
 alias kd="kubectl describe"
