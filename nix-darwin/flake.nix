@@ -143,6 +143,15 @@ EOF
         fi
       '';
 
+      system.activationScripts.fixDeterminateNixWarnings.text = ''
+        if [ -f /etc/nix/nix.conf ]; then
+          /usr/bin/grep -qE '^(eval-cores|lazy-trees)\s*=' /etc/nix/nix.conf || exit 0
+
+          echo "removing unsupported Determinate Nix settings from /etc/nix/nix.conf..."
+          /usr/bin/sed -i.bak -E '/^(eval-cores|lazy-trees)\s*=/d' /etc/nix/nix.conf
+        fi
+      '';
+
       launchd.user.agents."9router" = {
         serviceConfig = {
           Label = "dev.decolua.9router";
@@ -157,6 +166,45 @@ EOF
           EnvironmentVariables = {
             HOME = "/Users/van";
             PATH = "/Users/van/.npm-global/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+          };
+        };
+      };
+
+      launchd.user.agents."colima" = {
+        serviceConfig = {
+          Label = "com.user.colima";
+          ProgramArguments = [
+            "/opt/homebrew/bin/colima"
+            "start"
+            "default"
+            "--foreground"
+          ];
+          RunAtLoad = true;
+          KeepAlive = true;
+          StandardOutPath = "/Users/van/Library/Logs/colima-launchd.log";
+          StandardErrorPath = "/Users/van/Library/Logs/colima-launchd.log";
+          EnvironmentVariables = {
+            HOME = "/Users/van";
+            PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+          };
+        };
+      };
+
+      launchd.user.agents."spotify" = {
+        serviceConfig = {
+          Label = "com.user.spotify";
+          ProgramArguments = [
+            "/usr/bin/open"
+            "-gj"
+            "-a"
+            "Spotify"
+          ];
+          RunAtLoad = true;
+          StandardOutPath = "/Users/van/Library/Logs/spotify-launchd.log";
+          StandardErrorPath = "/Users/van/Library/Logs/spotify-launchd.log";
+          EnvironmentVariables = {
+            HOME = "/Users/van";
+            PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
           };
         };
       };

@@ -128,9 +128,9 @@ alias http="xh"
 bindkey jj vi-cmd-mode
 
 # Eza
-alias ll="eza -l --icons -a"
-alias lt="eza --tree --level=2 --long --icons"
-alias ltree="eza --tree --level=2  --icons"
+alias ll="eza -l -a"
+alias lt="eza --tree --level=2 --long"
+alias ltree="eza --tree --level=2"
 
 # SEC STUFF
 alias gobust="gobuster dir --wordlist $HOME/security/wordlists/diccnoext.txt --wildcard --url"
