@@ -153,7 +153,7 @@ alias mat='osascript -e "tell application \"System Events\" to key code 126 usin
 # Nix!
 export NIX_CONF_DIR=$HOME/.config/nix
 # Nix paths added after Homebrew so Homebrew takes precedence
-export PATH=$PATH:/run/current-system/sw/bin
+export PATH=$PATH:/run/current-system/sw/bin:$HOME/.nix-profile/bin:/etc/profiles/per-user/$USER/bin
 
 function ranger {
 	local IFS=$'\t\n'
@@ -182,7 +182,7 @@ fv() { nvim "$(find . -type f -not -path '*/.*' | fzf)" }
 if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh' ]; then
   . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh'
 fi
-export PATH="$PATH:/nix/var/nix/profiles/default/bin"
+export PATH="$PATH:/nix/var/nix/profiles/default/bin:$HOME/.nix-profile/bin:/etc/profiles/per-user/$USER/bin"
 
 eval "$(zoxide init zsh)"
 eval "$(atuin init zsh --disable-up-arrow)"
@@ -234,7 +234,7 @@ bindkey '^W' my-backward-kill-word
 
 export $(cat $HOME/.config/zshrc/.env | xargs)
 
-export scripts_path="/Users/van/LOCAL/working-space/Cellutions/MY-ENV/scripts"
+export scripts_path="/Users/van/LOCAL/personal/tools/scripts"
 alias puller="bash $scripts_path/git-puller.sh"
 alias slackmr="bash $scripts_path/mr-slack.sh"
 

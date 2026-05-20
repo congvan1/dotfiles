@@ -10,6 +10,12 @@
 
 # Makes sense for user specific applications that shouldn't be available system-wide
   home.packages = [
+    pkgs.openbao
+    pkgs.gnupg
+    pkgs.playwright
+    (pkgs.writeShellScriptBin "playwright" ''
+      exec ${pkgs.playwright}/cli.js "$@"
+    '')
   ];
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
@@ -23,9 +29,11 @@
     # ".config/nvim".source = ~/dotfiles/nvim;
     # ".config/nix".source = ~/dotfiles/nix;
     # ".config/nix-darwin".source = ~/dotfiles/nix-darwin;
-    ".config/tmux".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/tmux";
     ".config/karabiner".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/karabiner";
+    ".config/tmux".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/tmux";
     ".config/atuin".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/atuin";
+    ".docker/cli-plugins/docker-buildx".source =
+      config.lib.file.mkOutOfStoreSymlink "/opt/homebrew/lib/docker/cli-plugins/docker-buildx";
     # ".config/ghostty".source = ~/dotfiles/ghostty;
     # ".config/aerospace".source = ~/dotfiles/aerospace;
     # ".config/sketchybar".source = ~/dotfiles/sketchybar;

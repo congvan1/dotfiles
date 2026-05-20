@@ -208,6 +208,25 @@ EOF
           };
         };
       };
+
+      launchd.user.agents."openvpn" = {
+        serviceConfig = {
+          Label = "com.user.openvpn";
+          ProgramArguments = [
+            "/usr/bin/open"
+            "-gj"
+            "-a"
+            "OpenVPN Connect"
+          ];
+          RunAtLoad = true;
+          StandardOutPath = "/Users/van/Library/Logs/openvpn-launchd.log";
+          StandardErrorPath = "/Users/van/Library/Logs/openvpn-launchd.log";
+          EnvironmentVariables = {
+            HOME = "/Users/van";
+            PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+          };
+        };
+      };
     };
   in
   {

@@ -60,6 +60,7 @@
 
     # Container & VM Tools
     "docker"            
+    "docker-buildx"
     "docker-compose"
     "qemu"              # Emulator
     "dive"              # Exploring image, layers, size
