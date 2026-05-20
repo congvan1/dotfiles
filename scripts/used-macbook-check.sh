@@ -171,6 +171,49 @@ ioreg_value() {
   ' "$file"
 }
 
+bytes_to_human() {
+  local bytes="$1"
+
+  if [[ ! "$bytes" =~ ^[0-9]+$ ]]; then
+    printf "%s\n" "${bytes:-unknown}"
+    return
+  fi
+
+  awk -v bytes="$bytes" 'BEGIN { printf "%.1f GB / %.1f GiB", bytes / 1000000000, bytes / 1073741824 }'
+}
+
+ioreg_internal_ssd_name() {
+  local file="$1"
+  awk '
+    /APPLE SSD .* Media[[:space:]]+</ {
+      line = $0
+      sub(/^.*\+-o /, "", line)
+      sub(/[[:space:]]+<class.*$/, "", line)
+      sub(/[[:space:]]+Media$/, "", line)
+      print line
+      exit
+    }
+  ' "$file"
+}
+
+ioreg_internal_ssd_value() {
+  local file="$1"
+  local key="$2"
+  awk -F'= ' -v key="\"$key\"" '
+    /APPLE SSD .* Media[[:space:]]+</ {
+      in_media = 1
+    }
+    in_media && index($1, key) {
+      value = $2
+      gsub(/^[[:space:]]+/, "", value)
+      gsub(/[[:space:]]+$/, "", value)
+      gsub(/^"|"$/, "", value)
+      print value
+      exit
+    }
+  ' "$file"
+}
+
 print_command_if_available() {
   local title="$1"
   shift
@@ -254,6 +297,7 @@ HARDWARE_FILE="$TMP_ROOT/hardware.txt"
 POWER_FILE="$TMP_ROOT/power.txt"
 BATTERY_IOREG_FILE="$TMP_ROOT/battery-ioreg.txt"
 PLATFORM_IOREG_FILE="$TMP_ROOT/platform-ioreg.txt"
+MEDIA_IOREG_FILE="$TMP_ROOT/media-ioreg.txt"
 STORAGE_FILE="$TMP_ROOT/storage.txt"
 DISPLAY_FILE="$TMP_ROOT/display.txt"
 IBRIDGE_FILE="$TMP_ROOT/ibridge.txt"
@@ -281,6 +325,7 @@ fi
 if have "$IOREG"; then
   capture "$BATTERY_IOREG_FILE" "$IOREG" -r -c AppleSmartBattery
   capture "$PLATFORM_IOREG_FILE" "$IOREG" -rd1 -c IOPlatformExpertDevice
+  capture "$MEDIA_IOREG_FILE" "$IOREG" -r -c IOMedia -l
 fi
 
 if have "$PROFILES"; then
@@ -306,14 +351,20 @@ MODEL_NAME="$(field "$HARDWARE_FILE" "Model Name")"
 MODEL_ID="$(field "$HARDWARE_FILE" "Model Identifier")"
 MODEL_NUMBER="$(field "$HARDWARE_FILE" "Model Number")"
 CHIP_OR_CPU="$(first_matching_field "$HARDWARE_FILE" "Chip" "Processor Name")"
+CPU_CORES="$(field "$HARDWARE_FILE" "Total Number of Cores")"
 MEMORY="$(field "$HARDWARE_FILE" "Memory")"
 SERIAL="$(first_matching_field "$HARDWARE_FILE" "Serial Number (system)" "Serial Number")"
 ACTIVATION_LOCK="$(field "$HARDWARE_FILE" "Activation Lock Status")"
+GPU_CHIPSET="$(field "$DISPLAY_FILE" "Chipset Model")"
+GPU_CORES="$(field "$DISPLAY_FILE" "Total Number of Cores")"
 
 item "Model" "$MODEL_NAME"
 item "Model Identifier" "$MODEL_ID"
 item "Model Number" "$MODEL_NUMBER"
 item "Chip/CPU" "$CHIP_OR_CPU"
+item "CPU Cores" "$CPU_CORES"
+item "GPU" "$GPU_CHIPSET"
+item "GPU Cores" "$GPU_CORES"
 item "Memory" "$MEMORY"
 item "Serial" "$SERIAL"
 item "Coverage URL" "https://checkcoverage.apple.com/"
@@ -558,9 +609,32 @@ else
 fi
 
 section "Storage"
+NVME_MODEL="$(field "$STORAGE_FILE" "Model")"
+NVME_REVISION="$(field "$STORAGE_FILE" "Revision")"
+NVME_TRIM="$(field "$STORAGE_FILE" "TRIM Support")"
+NVME_DETACHABLE="$(field "$STORAGE_FILE" "Detachable Drive")"
+IOREG_SSD_MODEL="$(ioreg_internal_ssd_name "$MEDIA_IOREG_FILE")"
+IOREG_SSD_BSD="$(ioreg_internal_ssd_value "$MEDIA_IOREG_FILE" "BSD Name")"
+IOREG_SSD_SIZE_BYTES="$(ioreg_internal_ssd_value "$MEDIA_IOREG_FILE" "Size")"
+IOREG_SSD_SIZE_HUMAN=""
+if [[ -n "$IOREG_SSD_SIZE_BYTES" ]]; then
+  IOREG_SSD_SIZE_HUMAN="$(bytes_to_human "$IOREG_SSD_SIZE_BYTES")"
+fi
+
+item "SSD Model" "${NVME_MODEL:-${IOREG_SSD_MODEL:-unknown}}"
+item "SSD Revision" "${NVME_REVISION:-unknown}"
+item "Physical Disk" "${IOREG_SSD_BSD:-unknown}"
+item "Physical Size" "${IOREG_SSD_SIZE_HUMAN:-unknown}"
+item "TRIM Support" "${NVME_TRIM:-unknown}"
+item "Detachable Drive" "${NVME_DETACHABLE:-unknown}"
+item "IOPS" "not reported by macOS; benchmark required"
+
 ROOT_DISK="$("$DISKUTIL" list internal physical 2>/dev/null | awk '/^\/dev\/disk/ { sub("/dev/", "", $1); print $1; exit }')"
 if [[ -z "$ROOT_DISK" ]]; then
   ROOT_DISK="$("$DISKUTIL" info / 2>/dev/null | awk -F': *' '/Part of Whole/ { print $2; exit }')"
+fi
+if [[ -z "$ROOT_DISK" && -n "$IOREG_SSD_BSD" ]]; then
+  ROOT_DISK="$IOREG_SSD_BSD"
 fi
 
 if [[ -n "$ROOT_DISK" ]]; then
@@ -635,6 +709,8 @@ section "Summary"
 printf "%s%sQuick Facts%s\n" "$BOLD" "$DIM" "$RESET"
 item "Model" "${MODEL_NAME:-unknown} ${MODEL_ID:-unknown}"
 item "Serial" "${SERIAL:-unknown}"
+item "CPU/GPU" "cpu=${CPU_CORES:-unknown}, gpu=${GPU_CORES:-unknown} cores"
+item "Storage" "${NVME_MODEL:-${IOREG_SSD_MODEL:-unknown}}, ${IOREG_SSD_SIZE_HUMAN:-unknown}"
 item "Battery" "cycle=${CYCLE_COUNT:-unknown}, condition=${BATTERY_CONDITION:-unknown}, max=${MAX_CAPACITY:-unknown}"
 item "MDM/DEP" "$(awk 'NF { line = line (line ? "; " : "") $0 } END { print line }' "$PROFILES_FILE" 2>/dev/null)"
 if [[ -n "${ACTIVATION_LOCK:-}" ]]; then

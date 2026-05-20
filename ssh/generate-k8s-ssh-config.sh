@@ -6,7 +6,7 @@
 set -euo pipefail
 
 # Configuration
-SSH_KEY_DIR="${SSH_KEY_DIR:-$HOME/Downloads/VNG/ssh_key}"
+SSH_KEY_DIR="${SSH_KEY_DIR:-$HOME/workspace/work/clients/VNG/secrets/ssh}"
 OUTPUT_FILE="${1:-k8s-ssh-config.txt}"
 
 # Associative array mapping context to SSH key path

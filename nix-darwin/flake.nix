@@ -209,6 +209,26 @@ EOF
         };
       };
 
+      launchd.user.agents."maccy" = {
+        serviceConfig = {
+          Label = "com.user.maccy";
+          ProgramArguments = [
+            "/usr/bin/open"
+            "-gj"
+            "-a"
+            "Maccy"
+          ];
+          RunAtLoad = true;
+          LimitLoadToSessionType = "Aqua";
+          StandardOutPath = "/Users/van/Library/Logs/maccy-launchd.log";
+          StandardErrorPath = "/Users/van/Library/Logs/maccy-launchd.log";
+          EnvironmentVariables = {
+            HOME = "/Users/van";
+            PATH = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+          };
+        };
+      };
+
       launchd.user.agents."openvpn" = {
         serviceConfig = {
           Label = "com.user.openvpn";

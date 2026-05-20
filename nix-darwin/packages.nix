@@ -57,6 +57,8 @@
     "kubeseal"
     "k9s"
     "linkerd"
+    "argo"              # Argo Workflows CLI
+    "argocd"            # Argo CD CLI
 
     # Container & VM Tools
     "docker"            
@@ -72,6 +74,7 @@
     "neovim"
 
     # Network & Security Tools
+    "openvpn"
     "nmap"
     "xh"                # Modern HTTP client
     "ffuf"              # Web fuzzer
@@ -121,6 +124,7 @@
     # Cloud Tools
     "minio/stable/mc"   # MinIO client
     "awscli"            # AWS CLI
+    "cloudflared"       # Cloudflare Tunnel CLI
   ];
 
   casks = [
@@ -129,6 +133,8 @@
     "maccy"             # Clipboard manager
     "multipass"         # Ubuntu VMs
     "google-chrome"
+    "microsoft-edge"
+    "brave-browser"
     "chromedriver"
     "cloudflare-warp"
     "antigravity"

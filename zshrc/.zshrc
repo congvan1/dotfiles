@@ -257,9 +257,26 @@ if [ -f "$HOME/.config/zshrc/.env" ]; then
   export $(grep -v '^[[:space:]]*#' "$HOME/.config/zshrc/.env" | xargs)
 fi
 
-export scripts_path="/Users/van/LOCAL/personal/tools/scripts"
-alias puller="bash $scripts_path/git-puller.sh"
-alias slackmr="bash $scripts_path/mr-slack.sh"
+export WORKSPACE="$HOME/workspace"
+export WORK_DIR="$WORKSPACE/work"
+export CLIENTS_DIR="$WORK_DIR/clients"
+export CELLUTIONS_DIR="$CLIENTS_DIR/Cellutions"
+export VNG_DIR="$CLIENTS_DIR/VNG"
+export CELLUTIONS_SSH_DIR="$CELLUTIONS_DIR/ssh"
+export VNG_SECRETS_DIR="$VNG_DIR/secrets"
+export VNG_SSH_DIR="$VNG_SECRETS_DIR/ssh"
+
+alias ws='cd "$WORKSPACE"'
+alias work='cd "$WORK_DIR"'
+alias clients='cd "$CLIENTS_DIR"'
+alias cellutions='cd "$CELLUTIONS_DIR"'
+alias vng='cd "$VNG_DIR"'
+alias cellssh='cd "$CELLUTIONS_SSH_DIR"'
+alias vngssh='cd "$VNG_SSH_DIR"'
+
+export scripts_path="$HOME/dotfiles/scripts"
+[[ -x "$scripts_path/git-puller.sh" ]] && alias puller="bash $scripts_path/git-puller.sh"
+[[ -x "$scripts_path/mr-slack.sh" ]] && alias slackmr="bash $scripts_path/mr-slack.sh"
 
 # ProxyPal - Amp CLI Configuration (alternative to settings.json)
 export AMP_URL="http://localhost:8317"
