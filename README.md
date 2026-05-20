@@ -21,16 +21,18 @@ cd ~/dotfiles
 stow .
 ```
 
-### 2. Install Nix-Darwin
+### 2. Install Nix and Nix-Darwin
 
-First time setup:
+First time setup from this checkout:
 
 ```bash
-cd ~/.config/nix-darwin
-sudo NIX_SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt \
-  nix --extra-experimental-features "nix-command flakes" \
-  run nix-darwin/master#darwin-rebuild -- switch --flake .
+cd ~/dotfiles
+./nix-darwin/setup.sh
 ```
+
+The setup script installs Determinate Nix if `nix` is missing, rewrites the
+nix-darwin flake for the current user and host, then bootstraps `darwin-rebuild`
+from the flake.
 
 ## 🔄 Updating Configuration
 
@@ -39,16 +41,14 @@ sudo NIX_SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt
 After modifying `flake.nix` or `home.nix`:
 
 ```bash
-cd ~/.config/nix-darwin
-sudo NIX_SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt \
-  nix --extra-experimental-features "nix-command flakes" \
-  run nix-darwin/master#darwin-rebuild -- switch --flake .
+cd ~/dotfiles/nix-darwin
+darwin-rebuild switch --flake .
 ```
 
-Or if `darwin-rebuild` is already in your PATH:
+To update flake inputs first:
 
 ```bash
-cd ~/.config/nix-darwin
+cd ~/dotfiles/nix-darwin
 nix flake update
 darwin-rebuild switch --flake .
 ```
@@ -58,7 +58,7 @@ darwin-rebuild switch --flake .
 If you see "cached failure" errors:
 
 ```bash
-cd ~/.config/nix-darwin
+cd ~/dotfiles/nix-darwin
 nix flake update
 nix store gc  # Clear old builds
 darwin-rebuild switch --flake .
@@ -141,7 +141,7 @@ nix search nixpkgs <package-name>
 nix-env -q
 
 # Update flake inputs
-nix flake update ~/.config/nix-darwin
+nix flake update ~/dotfiles/nix-darwin
 ```
 
 ### Shell Aliases
@@ -178,7 +178,7 @@ C          # pbcopy (copy to clipboard)
 If you encounter SSL errors, ensure the certificate path is set:
 
 ```bash
-export NIX_SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt
+export NIX_SSL_CERT_FILE=/etc/nix/macos-keychain.crt
 ```
 
 ### Nix Daemon Issues
@@ -186,7 +186,7 @@ export NIX_SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.c
 Restart the Nix daemon:
 
 ```bash
-sudo launchctl kickstart -k system/org.nixos.nix-daemon
+sudo launchctl kickstart -k system/systems.determinate.nix-daemon
 ```
 
 ## 📄 License

@@ -1,23 +1,45 @@
 # Path to your oh-my-zsh installation.
 # Reevaluate the prompt string each time it's displaying a prompt
 setopt prompt_subst
+
+if [ -x /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 autoload bashcompinit && bashcompinit
 autoload -Uz compinit
+mkdir -p "$HOME/.cache/zsh"
+
+clean_fpath=()
+for dir in $fpath; do
+  broken_completion=0
+  if [[ -d "$dir" ]]; then
+    for completion in "$dir"/_*(N); do
+      [[ -L "$completion" && ! -e "$completion" ]] && broken_completion=1 && break
+    done
+  fi
+  (( broken_completion )) || clean_fpath+=("$dir")
+done
+fpath=("${clean_fpath[@]}")
+unset clean_fpath broken_completion completion dir
+
 compinit -d "$HOME/.cache/zsh/zcompdump"
-zstyle ':completion:*' cache-path "$HOME/.cache/zsh/zcompdump"
+zstyle ':completion:*' cache-path "$HOME/.cache/zsh"
 if command -v kubectl >/dev/null 2>&1; then
     source <(kubectl completion zsh)
 fi
-complete -C '/usr/local/bin/aws_completer' aws
+if command -v aws_completer >/dev/null 2>&1; then
+    complete -C "$(command -v aws_completer)" aws
+fi
 
 # Safely load zsh-autosuggestions
-if [ -f "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
+if command -v brew >/dev/null 2>&1 && [ -f "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
     source "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 fi
 
 # Safely load zsh-syntax-highlighting
-if [ -f "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]; then
+if command -v brew >/dev/null 2>&1 && [ -f "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]; then
     source "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 fi
 
@@ -231,8 +253,9 @@ my-backward-kill-word() {
 zle -N my-backward-kill-word
 bindkey '^W' my-backward-kill-word
 
-
-export $(cat $HOME/.config/zshrc/.env | xargs)
+if [ -f "$HOME/.config/zshrc/.env" ]; then
+  export $(grep -v '^[[:space:]]*#' "$HOME/.config/zshrc/.env" | xargs)
+fi
 
 export scripts_path="/Users/van/LOCAL/personal/tools/scripts"
 alias puller="bash $scripts_path/git-puller.sh"

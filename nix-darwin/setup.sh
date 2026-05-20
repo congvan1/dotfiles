@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
 # setup.sh - Auto-configure Nix Flake for current user/host
 
@@ -14,8 +15,40 @@ echo "  Home: $CURRENT_HOME"
 echo ""
 
 # 2. Define Paths
-FLAKE_FILE="flake.nix"
-HOME_FILE="home.nix"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+FLAKE_FILE="$SCRIPT_DIR/flake.nix"
+HOME_FILE="$SCRIPT_DIR/home.nix"
+
+ensure_nix() {
+  if command -v nix >/dev/null 2>&1 || [ -x /nix/var/nix/profiles/default/bin/nix ]; then
+    return 0
+  fi
+
+  echo "Nix is not installed or not on PATH."
+  echo "Installing Determinate Nix..."
+
+  local installer="${TMPDIR:-/tmp}/determinate-nix-installer.sh"
+  local install_args=("install" "--no-confirm")
+
+  if [ -f /etc/nix/nix.conf ] && [ ! -d /nix/var/nix ]; then
+    echo "Detected stale /etc/nix configuration without a Nix store; allowing installer to recreate managed files."
+    install_args+=("--force")
+  fi
+
+  curl -fsSL https://install.determinate.systems/nix -o "$installer"
+  sh "$installer" "${install_args[@]}"
+}
+
+nix_cmd() {
+  if command -v nix >/dev/null 2>&1; then
+    command -v nix
+  elif [ -x /nix/var/nix/profiles/default/bin/nix ]; then
+    echo "/nix/var/nix/profiles/default/bin/nix"
+  else
+    echo "nix was not found after installation" >&2
+    return 1
+  fi
+}
 
 # 3. Backup Original Files
 cp "$FLAKE_FILE" "$FLAKE_FILE.bak"
@@ -46,7 +79,19 @@ sed -i '' "s|home.homeDirectory = \"[^\"]*\";|home.homeDirectory = \"$CURRENT_HO
 echo "Configuration files updated."
 
 # 6. Run Rebuild
+ensure_nix
+NIX_BIN="$(nix_cmd)"
+
+echo "Updating flake lock..."
+"$NIX_BIN" flake lock "$SCRIPT_DIR"
+
 echo "Running darwin-rebuild..."
-sudo darwin-rebuild switch --flake .
+if command -v darwin-rebuild >/dev/null 2>&1; then
+  sudo darwin-rebuild switch --flake "$SCRIPT_DIR#$CURRENT_HOST"
+else
+  sudo "$NIX_BIN" --extra-experimental-features "nix-command flakes" \
+    run github:nix-darwin/nix-darwin/master#darwin-rebuild -- \
+    switch --flake "$SCRIPT_DIR#$CURRENT_HOST"
+fi
 
 echo "Done!"
