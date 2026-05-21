@@ -177,6 +177,17 @@ EOF
             "/opt/homebrew/bin/colima"
             "start"
             "default"
+            "--runtime"
+            "docker"
+            "--vm-type"
+            "vz"
+            "--mount-type"
+            "virtiofs"
+            "--arch"
+            "aarch64"
+            "--port-forwarder"
+            "ssh"
+            "--save-config"
             "--foreground"
           ];
           RunAtLoad = true;
@@ -214,7 +225,6 @@ EOF
           Label = "com.user.maccy";
           ProgramArguments = [
             "/usr/bin/open"
-            "-gj"
             "-a"
             "Maccy"
           ];

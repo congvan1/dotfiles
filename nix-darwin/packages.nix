@@ -29,6 +29,7 @@
     "tmux"
     "nushell"
     "carapace"
+    "zsh-navigation-tools"
     "sketchybar"
 
     # File Management & Navigation
@@ -140,6 +141,7 @@
     "antigravity"
     "notion"
     "spotify"
+    "telegram"
     "openvpn-connect"
     "ghostty"           # Modern terminal emulator
     "binary-ninja-free"

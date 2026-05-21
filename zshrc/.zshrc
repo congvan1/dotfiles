@@ -88,6 +88,26 @@ alias dl="docker ps -l -q"
 alias dx="docker exec -it"
 
 # Dirs
+_cd_dot_parent_path() {
+	local levels="$1"
+	local path=".."
+	local i
+
+	for (( i = 2; i <= levels; i++ )); do
+		path="$path/.."
+	done
+
+	print -r -- "$path"
+}
+
+cd() {
+	if [[ "$#" -eq 1 && "$1" =~ '^\.\.+$' ]]; then
+		builtin cd "$(_cd_dot_parent_path $((${#1} - 1)))"
+	else
+		builtin cd "$@"
+	fi
+}
+
 alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."
@@ -110,8 +130,8 @@ alias cl='clear'
 # K8S
 export KUBECONFIG="$HOME/.kube/config"
 alias k="kubectl"
-if (( $+functions[__start_kubectl] )); then
-    compdef __start_kubectl k
+if (( $+functions[_kubectl] )); then
+    compdef _kubectl k
 fi
 alias ka="kubectl apply -f"
 alias kg="kubectl get"
@@ -128,12 +148,92 @@ alias kcns='kubectl config set-context --current --namespace'
 alias podname=''
 
 kdec() {
-    if [ -n "$2" ]; then
-        kubectl get secret "$1" -n "$2" -o yaml | yq '.data | to_entries[] | .key as $k | .value | @base64d | "\($k): \(.)"'
-    else
-        kubectl get secret "$1" -o yaml | yq '.data | to_entries[] | .key as $k | .value | @base64d | "\($k): \(.)"'
+    local namespace=""
+    local secret=""
+    local -a kubectl_args
+
+    while (( $# )); do
+        case "$1" in
+            -n|--namespace)
+                namespace="$2"
+                shift 2
+                ;;
+            --namespace=*)
+                namespace="${1#--namespace=}"
+                shift
+                ;;
+            -h|--help)
+                echo "usage: kdec [-n namespace] secret"
+                return 0
+                ;;
+            -*)
+                echo "kdec: unknown option: $1" >&2
+                return 2
+                ;;
+            *)
+                if [[ -z "$secret" ]]; then
+                    secret="$1"
+                elif [[ -z "$namespace" ]]; then
+                    namespace="$1"
+                else
+                    echo "kdec: unexpected argument: $1" >&2
+                    return 2
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    if [[ -z "$secret" ]]; then
+        echo "usage: kdec [-n namespace] secret" >&2
+        return 2
     fi
+
+    kubectl_args=(get secret "$secret")
+    [[ -n "$namespace" ]] && kubectl_args+=(-n "$namespace")
+    kubectl_args+=(-o yaml)
+
+    kubectl "${kubectl_args[@]}" | yq '.data | to_entries[] | .key as $k | .value | @base64d | "\($k): \(.)"'
 }
+
+_kdec_completion() {
+    local -a secret_names namespaces kubectl_args
+    local namespace=""
+    local i
+
+    for (( i = 2; i <= $#words; i++ )); do
+        case "${words[i]}" in
+            -n|--namespace)
+                namespace="${words[i+1]}"
+                ;;
+            --namespace=*)
+                namespace="${words[i]#--namespace=}"
+                ;;
+        esac
+    done
+
+    kubectl_args=(get secret -o name)
+    [[ -n "$namespace" ]] && kubectl_args+=(-n "$namespace")
+    secret_names=("${(@f)$(kubectl "${kubectl_args[@]}" 2>/dev/null | sed 's#^secret/##')}")
+    namespaces=("${(@f)$(kubectl get namespace -o name 2>/dev/null | sed 's#^namespace/##')}")
+
+    _arguments -C \
+        '(-h --help)'{-h,--help}'[show help]' \
+        '(-n --namespace)'{-n,--namespace}'[namespace]:namespace:->namespace' \
+        '1:secret:->secret' \
+        '2:namespace:->namespace'
+
+    case "$state" in
+        namespace)
+            _describe -t namespaces 'namespace' namespaces
+            ;;
+        secret)
+            _describe -t secrets 'secret' secret_names
+            ;;
+    esac
+}
+
+compdef _kdec_completion kdec
 
 seal() {
     if [[ -e "$1" ]]; then
@@ -210,6 +310,10 @@ eval "$(zoxide init zsh)"
 eval "$(atuin init zsh --disable-up-arrow)"
 eval "$(direnv hook zsh)"
 
+if [[ -r /opt/homebrew/share/zsh-navigation-tools/zsh-navigation-tools.plugin.zsh ]]; then
+	source /opt/homebrew/share/zsh-navigation-tools/zsh-navigation-tools.plugin.zsh
+fi
+
 # Force Block Cursor ALWAYS (even in vi-mode)
 # Define a function to reset cursor to block when keymap changes (e.g. going to insert mode)
 function zle-keymap-select {
@@ -233,12 +337,34 @@ vim() {
 }
 
 syncmain() {
-  set -e
-  git fetch origin
-  git switch main
-  git pull --ff-only
-  git switch -
-  git merge origin/main
+  local current_branch
+  current_branch="$(git branch --show-current)" || return 1
+
+  if [[ -z "$current_branch" ]]; then
+    echo "syncmain: not on a branch."
+    return 1
+  fi
+
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "syncmain: working tree is dirty. Commit or stash first."
+    git status --short
+    return 1
+  fi
+
+  git fetch origin || return 1
+  git switch main || return 1
+
+  if ! git pull --ff-only; then
+    git switch "$current_branch" >/dev/null 2>&1
+    return 1
+  fi
+
+  git switch "$current_branch" || return 1
+
+  if ! git merge origin/main; then
+    echo "syncmain: merge conflict. Resolve it and commit, or run: git merge --abort"
+    return 1
+  fi
 }
 
 # Custom Ctrl+W to delete words stopping at slashes
