@@ -34,7 +34,10 @@ def load_env_file(path: Path) -> None:
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        os.environ.setdefault(key.strip(), value.strip())
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        os.environ.setdefault(key.strip(), value)
 
 
 def require_env(name: str) -> str:
@@ -44,19 +47,29 @@ def require_env(name: str) -> str:
     return value
 
 
+def first_env(*names: str) -> str:
+    for name in names:
+        value = os.environ.get(name)
+        if value:
+            return value
+    raise SystemExit(f"Missing required environment variable, expected one of: {', '.join(names)}")
+
+
 def make_auth_headers() -> dict[str, str]:
-    email = require_env("CONFLUENCE_EMAIL")
-    api_token = require_env("CONFLUENCE_API_TOKEN")
+    email = first_env("CONFLUENCE_EMAIL", "ATLASSIAN_EMAIL")
+    api_token = first_env("CONFLUENCE_API_TOKEN", "ATLASSIAN_API_TOKEN")
     auth = base64.b64encode(f"{email}:{api_token}".encode("utf-8")).decode("ascii")
     return {
         "Authorization": f"Basic {auth}",
         "Accept": "application/json",
-        "User-Agent": "confluence-docs-fetcher/1.0",
+        "User-Agent": "atlassian-workspace-confluence-fetcher/1.0",
     }
 
 
 def confluence_request_json(path: str, query: dict[str, str] | None = None) -> dict:
-    base_url = require_env("CONFLUENCE_BASE_URL").rstrip("/")
+    base_url = first_env("CONFLUENCE_BASE_URL", "ATLASSIAN_BASE_URL").rstrip("/")
+    if not base_url.endswith("/wiki") and path.startswith(("/api/", "/rest/")):
+        path = f"/wiki{path}"
     query_string = urllib.parse.urlencode(query or {})
     url = f"{base_url}{path}"
     if query_string:

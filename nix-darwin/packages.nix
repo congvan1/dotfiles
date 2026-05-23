@@ -49,6 +49,7 @@
     "glab"              # GitLab CLI
     "pcre2"             # Git dependency (regex library)
     "diff-so-fancy"
+    "git-delta"         # Better git diff UI
 
     # Kubernetes Tools
     "kubernetes-cli"
@@ -77,6 +78,7 @@
     # Network & Security Tools
     "openvpn"
     "nmap"
+    "squid"             # Local forward proxy
     "xh"                # Modern HTTP client
     "ffuf"              # Web fuzzer
     "gobuster"          # Directory bruteforcer

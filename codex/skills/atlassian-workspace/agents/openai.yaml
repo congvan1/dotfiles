@@ -1,0 +1,4 @@
+interface:
+  display_name: "Atlassian Workspace"
+  short_description: "Read and write Atlassian Jira and Confluence content safely"
+  default_prompt: "Use $atlassian-workspace to read or update Atlassian Jira issues and Confluence pages safely."

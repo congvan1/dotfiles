@@ -95,6 +95,56 @@
         menuExtraClock.ShowSeconds = false;
         menuExtraClock.ShowDate = 0;
         menuExtraClock.Show24Hour = true;
+
+        CustomUserPreferences = {
+          "com.apple.symbolichotkeys" = {
+            AppleSymbolicHotKeys = {
+              # Spotlight search. Disabled so Ctrl+Space can be used for input switching.
+              "64" = {
+                enabled = false;
+              };
+
+              # Select the previous input source: Ctrl+Space.
+              "60" = {
+                enabled = true;
+                value = {
+                  type = "standard";
+                  parameters = [
+                    32
+                    49
+                    262144
+                  ];
+                };
+              };
+
+              # Copy picture of selected area to clipboard: Shift+Command+1.
+              "31" = {
+                enabled = true;
+                value = {
+                  type = "standard";
+                  parameters = [
+                    49
+                    18
+                    1179648
+                  ];
+                };
+              };
+
+              # Select next source in input menu. Disabled to avoid shortcut conflicts.
+              "61" = {
+                enabled = false;
+                value = {
+                  type = "standard";
+                  parameters = [
+                    32
+                    49
+                    786432
+                  ];
+                };
+              };
+            };
+          };
+        };
       };
 
       # Homebrew Integration
@@ -151,6 +201,21 @@ EOF
           /usr/bin/sed -i.bak -E '/^(eval-cores|lazy-trees)\s*=/d' /etc/nix/nix.conf
         fi
       '';
+
+      launchd.user.agents."swap-control-globe" = {
+        serviceConfig = {
+          Label = "com.user.swap-control-globe";
+          ProgramArguments = [
+            "/usr/bin/hidutil"
+            "property"
+            "--set"
+            ''{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x7000000E0,"HIDKeyboardModifierMappingDst":0xFF00000003},{"HIDKeyboardModifierMappingSrc":0xFF00000003,"HIDKeyboardModifierMappingDst":0x7000000E0}]}''
+          ];
+          RunAtLoad = true;
+          StandardOutPath = "/Users/van/Library/Logs/swap-control-globe-launchd.log";
+          StandardErrorPath = "/Users/van/Library/Logs/swap-control-globe-launchd.log";
+        };
+      };
 
       launchd.user.agents."9router" = {
         serviceConfig = {

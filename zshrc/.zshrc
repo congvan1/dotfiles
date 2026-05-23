@@ -7,7 +7,6 @@ if [ -x /opt/homebrew/bin/brew ]; then
 fi
 
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
-autoload bashcompinit && bashcompinit
 autoload -Uz compinit
 mkdir -p "$HOME/.cache/zsh"
 
@@ -24,7 +23,8 @@ done
 fpath=("${clean_fpath[@]}")
 unset clean_fpath broken_completion completion dir
 
-compinit -d "$HOME/.cache/zsh/zcompdump"
+compinit -i -d "$HOME/.cache/zsh/zcompdump"
+autoload -Uz bashcompinit && bashcompinit
 zstyle ':completion:*' cache-path "$HOME/.cache/zsh"
 if command -v kubectl >/dev/null 2>&1; then
     source <(kubectl completion zsh)
@@ -70,7 +70,16 @@ alias gp="git push origin HEAD"
 alias gpu="git pull origin"
 alias gs="git status"
 alias glog="git log --graph --topo-order --pretty='%w(100,0,6)%C(yellow)%h%C(bold)%C(black)%d %C(cyan)%ar %C(green)%an%n%C(bold)%C(white)%s %N' --abbrev-commit"
-alias gdiff="git diff"
+unalias gdiff 2>/dev/null
+gdiff() {
+	if command -v delta >/dev/null 2>&1; then
+		git -c core.pager="delta --syntax-theme=Dracula --line-numbers --side-by-side" diff "$@"
+	elif command -v diff-so-fancy >/dev/null 2>&1; then
+		git diff --color=always "$@" | diff-so-fancy | less --tabs=4 -RFX
+	else
+		git diff "$@"
+	fi
+}
 alias gco="git checkout"
 alias gb='git branch'
 alias gba='git branch -a'
@@ -265,7 +274,12 @@ alias gr="$HOME/go/src/github.com/tomnomnom/gf/gf"
 
 ### FZF ###
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow'
-[ -f "$HOME/.fzf.zsh" ] && source "$HOME/.fzf.zsh"
+if [[ -r "$HOME/.fzf.zsh" ]]; then
+	source "$HOME/.fzf.zsh"
+elif [[ -r /opt/homebrew/opt/fzf/shell/key-bindings.zsh ]]; then
+	source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+	[[ -r /opt/homebrew/opt/fzf/shell/completion.zsh ]] && source /opt/homebrew/opt/fzf/shell/completion.zsh
+fi
 
 # Homebrew - prioritize over nix for latest packages
 export PATH=/opt/homebrew/bin:/opt/homebrew/sbin:$PATH
@@ -313,6 +327,16 @@ eval "$(direnv hook zsh)"
 if [[ -r /opt/homebrew/share/zsh-navigation-tools/zsh-navigation-tools.plugin.zsh ]]; then
 	source /opt/homebrew/share/zsh-navigation-tools/zsh-navigation-tools.plugin.zsh
 fi
+
+if (( $+widgets[fzf-history-widget] )); then
+	bindkey -M emacs '^R' fzf-history-widget
+	bindkey -M viins '^R' fzf-history-widget
+	bindkey -M vicmd '^R' fzf-history-widget
+fi
+
+bindkey -M emacs '^I' expand-or-complete
+bindkey -M viins '^I' expand-or-complete
+bindkey -M vicmd '^I' expand-or-complete
 
 # Force Block Cursor ALWAYS (even in vi-mode)
 # Define a function to reset cursor to block when keymap changes (e.g. going to insert mode)
