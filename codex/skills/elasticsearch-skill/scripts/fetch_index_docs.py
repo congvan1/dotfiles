@@ -224,7 +224,12 @@ def build_query(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Fetch documents from Elasticsearch by index pattern.")
-    parser.add_argument("--index-pattern", help="Example: '.ds-k8s-prd_sn-prd-pulsar*'")
+    parser.add_argument(
+        "--index-pattern",
+        "--index",
+        dest="index_pattern",
+        help="Exact index or index pattern. Example: 'stg-db-cassandra-2026-05-26' or '.ds-k8s-prd_sn-prd-pulsar*'",
+    )
     parser.add_argument("--dataview", choices=sorted(DATA_VIEWS), help="Use a simulated Kibana data view name.")
     parser.add_argument("--minutes", type=int, default=60, help="Look back window in minutes. Default: 60")
     parser.add_argument("--from", dest="time_from", help="Absolute start time, for example: 2026-04-03T11:00:00+07:00")

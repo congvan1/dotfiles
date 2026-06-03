@@ -14,6 +14,13 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 
+class ElasticsearchRequestError(Exception):
+    def __init__(self, message: str, *, exit_code: int = 1, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.exit_code = exit_code
+        self.status_code = status_code
+
+
 def load_dotenv(dotenv_path: Path) -> dict[str, str]:
     data: dict[str, str] = {}
     if not dotenv_path.exists():
@@ -223,6 +230,7 @@ class ElasticsearchClient:
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
+            "kbn-xsrf": "true",
         }
         if self.api_key:
             headers["Authorization"] = f"ApiKey {self.api_key}"
@@ -232,6 +240,12 @@ class ElasticsearchClient:
         return headers
 
     def _request(self, method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        try:
+            return self._request_or_raise(method, path, payload)
+        except ElasticsearchRequestError as exc:
+            fail(str(exc), exit_code=exc.exit_code)
+
+    def _request_or_raise(self, method: str, path: str, payload: dict[str, Any] | None = None) -> dict[str, Any]:
         url = f"{self.base_url}/{path.lstrip('/')}"
         body = None if payload is None else json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(url=url, data=body, method=method, headers=self._build_headers())
@@ -239,16 +253,42 @@ class ElasticsearchClient:
         try:
             with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
                 response_body = response.read().decode("utf-8")
-                return json.loads(response_body) if response_body else {}
+                try:
+                    return json.loads(response_body) if response_body else {}
+                except json.JSONDecodeError as exc:
+                    preview = response_body[:200].replace("\n", " ")
+                    raise ElasticsearchRequestError(
+                        f"Elasticsearch returned non-JSON for `{url}`: {preview}",
+                        exit_code=1,
+                    ) from exc
         except urllib.error.HTTPError as exc:
             details = exc.read().decode("utf-8", errors="replace")
-            fail(f"Elasticsearch HTTP {exc.code} for `{url}`: {details}", exit_code=1)
+            raise ElasticsearchRequestError(
+                f"Elasticsearch HTTP {exc.code} for `{url}`: {details}",
+                exit_code=1,
+                status_code=exc.code,
+            ) from exc
         except urllib.error.URLError as exc:
-            fail(f"Cannot connect to Elasticsearch `{url}`: {exc.reason}", exit_code=1)
+            raise ElasticsearchRequestError(
+                f"Cannot connect to Elasticsearch `{url}`: {exc.reason}",
+                exit_code=1,
+            ) from exc
 
     def search(self, index_pattern: str, query: dict[str, Any]) -> dict[str, Any]:
         encoded_index = urllib.parse.quote(index_pattern, safe="*,-_.")
-        return self._request("POST", f"{encoded_index}/_search", query)
+        direct_path = f"{encoded_index}/_search"
+        try:
+            return self._request_or_raise("POST", direct_path, query)
+        except ElasticsearchRequestError as exc:
+            if exc.status_code != 404:
+                fail(str(exc), exit_code=exc.exit_code)
+
+        proxy_path = urllib.parse.quote(f"{index_pattern}/_search", safe="*,-_.")
+        return self._request(
+            "POST",
+            f"/api/console/proxy?path={proxy_path}&method=POST",
+            query,
+        )
 
 
 def print_json(data: dict[str, Any]) -> None:

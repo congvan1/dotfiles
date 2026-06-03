@@ -95,6 +95,7 @@
     # Data Processing
     "jq"                # JSON processor
     "yq"                # YAML processor
+    "jwt-cli"           # Decode and inspect JWTs
 
     # Utilities
     "sshs"              # SSH manager
@@ -144,6 +145,7 @@
     "notion"
     "spotify"
     "telegram"
+    "zalo"
     "openvpn-connect"
     "ghostty"           # Modern terminal emulator
     "binary-ninja-free"

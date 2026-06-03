@@ -25,6 +25,16 @@ Read [dataviews.py](/Users/van/.codex/skills/elasticsearch-skill/scripts/datavie
 
 ## Common queries
 
+Specific index query:
+
+```bash
+python3 ~/.codex/skills/elasticsearch-skill/scripts/fetch_index_docs.py \
+  --index stg-db-cassandra-2026-05-26 \
+  --from '2026-05-26 15:15' \
+  --to '2026-05-26 15:18' \
+  --level error
+```
+
 Production Pulsar errors:
 
 ```bash

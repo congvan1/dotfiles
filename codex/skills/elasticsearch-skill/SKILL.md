@@ -12,7 +12,7 @@ Use this skill when the user wants log-based diagnosis, especially for Pulsar, b
 1. Query Elasticsearch first. Do not guess root cause before reading logs.
 2. Prefer the local script:
    `python3 ~/.codex/skills/elasticsearch-skill/scripts/fetch_index_docs.py`
-3. Use `--dataview` when available.
+3. Use `--dataview` when available. If the user gives a concrete index name, use `--index` or `--index-pattern` directly, for example `--index stg-db-cassandra-2026-05-26`.
 4. Timezone defaults to `Asia/Ho_Chi_Minh`. The user usually does not need `--tz`.
 5. For RCA:
    start with `--level error`
@@ -46,6 +46,7 @@ Use this skill when the user wants log-based diagnosis, especially for Pulsar, b
 
 - Never read or print the contents of `.env`.
 - Use the local scripts directly; they already load credentials from `.env`.
+- The script first tries raw Elasticsearch `/<index>/_search`; when the log URL is a Kibana gateway, it automatically falls back to `/api/console/proxy`.
 - Only inspect `.env.example` when checking required config keys.
 - Only read `queries.md` or `dataviews.py` when necessary.
 - Never expose Elasticsearch credentials in responses, logs, or command output.
