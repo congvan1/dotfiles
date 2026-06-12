@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 **/*.bak
 **/.env
+.nvimlog
+result
 **/k8s-ssh-config.txt
 tmux/plugins/
 raycast

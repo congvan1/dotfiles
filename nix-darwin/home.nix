@@ -10,8 +10,25 @@
 
 # Makes sense for user specific applications that shouldn't be available system-wide
   home.packages = [
+    pkgs.asm-lsp
+    pkgs.nasm
     pkgs.openbao
     pkgs.gnupg
+    pkgs.television
+
+    # Security and supply-chain scanning
+    pkgs.gitleaks
+    pkgs.grype
+    pkgs.hadolint
+    pkgs.kube-linter
+    pkgs.kube-score
+    pkgs.osv-scanner
+    pkgs.pre-commit
+    pkgs.semgrep
+    pkgs.syft
+    pkgs.trivy
+    pkgs.trufflehog
+
     pkgs.playwright
     (pkgs.writeShellScriptBin "playwright" ''
       exec ${pkgs.playwright}/cli.js "$@"

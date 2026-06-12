@@ -50,6 +50,9 @@ Use this skill when the user wants Argo Workflow YAML written to match the patte
 - `apiVersion`, `kind`, `metadata.name`, and `spec.entrypoint` are aligned
 - parameters are named consistently across `inputs`, `arguments`, and `workflow.parameters`
 - outputs use `valueFrom.path` or `valueFrom.parameter` consistently
+- reusable scanner templates expose a stable contract: checked-out workspace path, relative source path, optional config/baseline/policy inputs, pinned scanner image, exit-code policy, machine-readable report path, count outputs, summary JSON, and report artifacts
+- composite or service CI workflows should define scanner policy values in top-level `spec.arguments.parameters` and pass them to scanner `templateRef` calls with `workflow.parameters.*`, so future callers can override scan behavior without editing DAG tasks
+- security scanner templates default to redacted or JSON outputs where available, keep tool caches under `/tmp`, and avoid depending on extra packages inside scanner images
 - referenced template names actually exist
 - shell snippets quote interpolated values carefully
 - examples of environment values, namespaces, and resource names match existing repo usage

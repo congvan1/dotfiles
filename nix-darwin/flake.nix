@@ -69,7 +69,7 @@
         screencapture.type = "png";
         
         # Screensaver
-        screensaver.askForPasswordDelay = 10;
+        screensaver.askForPasswordDelay = 0;
         
         # Global macOS settings
         NSGlobalDomain.AppleShowAllExtensions = true;
@@ -99,9 +99,17 @@
         CustomUserPreferences = {
           "com.apple.symbolichotkeys" = {
             AppleSymbolicHotKeys = {
-              # Spotlight search. Disabled so Ctrl+Space can be used for input switching.
+              # Cmd+Space opens Spotlight Search on macOS.
               "64" = {
-                enabled = false;
+                enabled = true;
+                value = {
+                  type = "standard";
+                  parameters = [
+                    32
+                    49
+                    1048576
+                  ];
+                };
               };
 
               # Select the previous input source: Ctrl+Space.
@@ -149,7 +157,7 @@
 
       # Homebrew Integration
       homebrew.enable = true;
-      homebrew.onActivation.cleanup = "uninstall";  # Remove unmanaged apps without zapping app data
+      homebrew.onActivation.cleanup = "none";  # Avoid Homebrew's non-interactive --cleanup confirmation requirement
       homebrew.onActivation.autoUpdate = false;
       homebrew.onActivation.upgrade = false;
 

@@ -113,6 +113,7 @@
     "tfenv"             # Terraform version manager
     "terragrunt"        # Terraform wrapper/orchestrator
     "ansible"
+    "checkov"           # IaC security scanner
     "python@3.12"       # Python for Ansible
     "sshpass"           # SSH password authentication
     "ruby"
@@ -146,8 +147,10 @@
     "spotify"
     "telegram"
     "zalo"
+    "1password"
     "openvpn-connect"
     "ghostty"           # Modern terminal emulator
+    "yubico-authenticator"
     "binary-ninja-free"
   ];
 }

@@ -72,7 +72,7 @@ type: Opaque
 stringData:
   # Plain text (will be base64 encoded)
   db-password: "MySecurePassword123!"
-  api-key: "sk-1234567890abcdef"
+  api-key: "<api-key-placeholder>"
   jwt-secret: "super-secret-jwt-key"
 data:
   # Already base64 encoded
@@ -95,9 +95,7 @@ stringData:
     MIIDXTCCAkWgAwIBAgIJAKZ...
     -----END CERTIFICATE-----
   tls.key: |
-    -----BEGIN PRIVATE KEY-----
-    MIIEvQIBADANBgkqhkiG9w0B...
-    -----END PRIVATE KEY-----
+    <private-key-placeholder>
 ```
 
 ### Docker Registry Secret
@@ -117,7 +115,7 @@ stringData:
           "username": "myuser",
           "password": "mypassword",
           "email": "user@example.com",
-          "auth": "bXl1c2VyOm15cGFzc3dvcmQ="
+          "auth": "<base64-username-password-placeholder>"
         }
       }
     }
@@ -148,9 +146,7 @@ metadata:
 type: kubernetes.io/ssh-auth
 stringData:
   ssh-privatekey: |
-    -----BEGIN OPENSSH PRIVATE KEY-----
-    b3BlbnNzaC1rZXktdjEAAAAABG5vbmUA...
-    -----END OPENSSH PRIVATE KEY-----
+    <ssh-private-key-placeholder>
 ```
 
 ## Using ConfigMaps and Secrets
