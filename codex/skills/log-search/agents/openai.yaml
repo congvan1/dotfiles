@@ -1,0 +1,4 @@
+interface:
+  display_name: "Log Search"
+  short_description: "Query logs for RCA"
+  default_prompt: "Use $log-search to query logs first, then analyze the results for root cause."

@@ -1,18 +1,18 @@
 ---
-name: elasticsearch-skill
-description: Use when investigating application, infrastructure, Kubernetes, or Pulsar issues by querying Elasticsearch logs first. Use this skill for log-based RCA, Kibana-style data view queries, time-range log inspection, and broker/client incident analysis before making assumptions.
+name: log-search
+description: Use when investigating application, infrastructure, Kubernetes, or Pulsar issues by querying logs first. Queries Elasticsearch logs (directly or via a Kibana gateway) and resolves Kibana data views across spaces. Use this skill for log-based RCA, data view queries, time-range log inspection, and broker/client incident analysis before making assumptions.
 ---
 
-# Elasticsearch Skill
+# Log Search
 
-Use this skill when the user wants log-based diagnosis, especially for Pulsar, broker issues, or Kibana-like data view queries.
+Use this skill when the user wants log-based diagnosis, especially for Pulsar, broker issues, or Kibana data view queries. It queries Elasticsearch logs (directly or through a Kibana gateway) and resolves Kibana data views across spaces.
 
 ## Default workflow
 
 1. Query Elasticsearch first. Do not guess root cause before reading logs.
 2. Prefer the local script:
-   `python3 ~/.codex/skills/elasticsearch-skill/scripts/fetch_index_docs.py`
-3. Use `--dataview` when available. If the user gives a concrete index name, use `--index` or `--index-pattern` directly, for example `--index stg-db-cassandra-2026-05-26`.
+   `python3 ~/.codex/skills/log-search/scripts/fetch_index_docs.py`
+3. Use `--dataview` when available. It resolves a real Kibana data view across all spaces (default, dev, stg, prd). Pass a bare `name` (resolved if unique across spaces) or `space:name` to disambiguate, for example `dev:sn-dev-workload` or `stg:sn-stg-pulsar`. Deprecated local aliases (e.g. `pulsar-dev-broker`) are used only as a fallback when Kibana has no match. Run `--list-dataviews` to see everything. If the user gives a concrete index name, use `--index` or `--index-pattern` directly, for example `--index stg-db-cassandra-2026-05-26`.
 4. Timezone defaults to `Asia/Ho_Chi_Minh`. The user usually does not need `--tz`.
 5. For RCA:
    start with `--level error`
@@ -54,14 +54,14 @@ Use this skill when the user wants log-based diagnosis, especially for Pulsar, b
 ## When to read more
 
 - For example commands and common Pulsar workflows, read:
-  [queries.md](/Users/van/.codex/skills/elasticsearch-skill/references/queries.md)
+  [queries.md](/Users/van/.codex/skills/log-search/references/queries.md)
 - For data view mappings, read:
-  [dataviews.py](/Users/van/.codex/skills/elasticsearch-skill/scripts/dataviews.py)
+  [dataviews.py](/Users/van/.codex/skills/log-search/scripts/dataviews.py)
 
 ## Config
 
 The skill reads Elasticsearch credentials from:
-- [/.env](/Users/van/.codex/skills/elasticsearch-skill/.env)
+- [/.env](/Users/van/.codex/skills/log-search/.env)
 - or shell environment variables
 
 If the user asks to extend the skill, update the scripts in `scripts/` and keep the workflow centered on querying Elasticsearch before analysis.

@@ -8,7 +8,7 @@ import io
 from dataclasses import dataclass
 from typing import Any
 
-from dataviews import DATA_VIEWS, resolve_dataview
+from dataviews import format_dataview_listing, resolve_dataview
 from es_client import ElasticsearchClient, extract_shard_failures, load_config, normalize_hit, print_json, resolve_time_range, validate_index_pattern, validate_positive_int
 
 
@@ -26,6 +26,9 @@ COMPACT_SOURCE_FIELDS = [
     "decode.alert_level",
     "decode.caller",
     "decode.alert_msg",
+    "decode.alert_error",
+    "decode.alert_stacktrace",
+    "decode.stack_trace",
     "error.message",
     "error.type",
     "kubernetes.labels.component",
@@ -41,6 +44,9 @@ FULL_SOURCE_FIELDS = [
     "decode.alert_level",
     "decode.caller",
     "decode.alert_msg",
+    "decode.alert_error",
+    "decode.alert_stacktrace",
+    "decode.stack_trace",
     "error.message",
     "error.type",
     "error.stack_trace",
@@ -230,7 +236,20 @@ def parse_args() -> argparse.Namespace:
         dest="index_pattern",
         help="Exact index or index pattern. Example: 'stg-db-cassandra-2026-05-26' or '.ds-k8s-prd_sn-prd-pulsar*'",
     )
-    parser.add_argument("--dataview", choices=sorted(DATA_VIEWS), help="Use a simulated Kibana data view name.")
+    parser.add_argument(
+        "--dataview",
+        help=(
+            "Kibana data view to query, across all spaces. Use a bare name "
+            "(resolved if unique) or `space:name` to disambiguate, e.g. "
+            "`dev:sn-dev-workload`. Falls back to a deprecated local alias when "
+            "Kibana has no match. Use --list-dataviews to see all options."
+        ),
+    )
+    parser.add_argument(
+        "--list-dataviews",
+        action="store_true",
+        help="List curated local aliases and real Kibana data views, then exit.",
+    )
     parser.add_argument("--minutes", type=int, default=60, help="Look back window in minutes. Default: 60")
     parser.add_argument("--from", dest="time_from", help="Absolute start time, for example: 2026-04-03T11:00:00+07:00")
     parser.add_argument("--to", dest="time_to", help="Absolute end time, for example: 2026-04-03T12:00:00+07:00")
@@ -362,17 +381,26 @@ def sort_time_range(first_time: str, second_time: str) -> tuple[str, str]:
 
 def main() -> None:
     args = parse_args()
+
+    config = load_config()
+    client = ElasticsearchClient(config)
+
+    if args.list_dataviews:
+        print(format_dataview_listing(client))
+        return
+
     if not args.index_pattern and not args.dataview:
         raise SystemExit("Provide one of `--index-pattern` or `--dataview`.")
     if args.index_pattern and args.dataview:
         raise SystemExit("Use only one of `--index-pattern` or `--dataview`.")
 
-    index_pattern = resolve_dataview(args.dataview) if args.dataview else validate_index_pattern(args.index_pattern)
+    index_pattern = (
+        resolve_dataview(args.dataview, client)
+        if args.dataview
+        else validate_index_pattern(args.index_pattern)
+    )
     validate_positive_int("minutes", args.minutes, maximum=7 * 24 * 60)
     validate_positive_int("limit", args.limit, maximum=50000)
-
-    config = load_config()
-    client = ElasticsearchClient(config)
     page_size = min(args.limit, 1000)
     raw_hits: list[dict[str, Any]] = []
     seen_hit_ids: set[str] = set()

@@ -10,7 +10,7 @@ import urllib.parse
 import urllib.request
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 from zoneinfo import ZoneInfo
 
 
@@ -60,7 +60,7 @@ def require_config(config: dict[str, str], key: str) -> str:
     return value
 
 
-def fail(message: str, exit_code: int = 2) -> None:
+def fail(message: str, exit_code: int = 2) -> NoReturn:
     print(json.dumps({"error": message}, ensure_ascii=False, indent=2), file=sys.stderr)
     raise SystemExit(exit_code)
 
@@ -168,6 +168,8 @@ def normalize_hit(hit: dict[str, Any]) -> dict[str, Any]:
     stack = pick_first(
         hit,
         [
+            "decode.stack_trace",
+            "decode.alert_stacktrace",
             "error.stack_trace",
             "error.stack",
             "exception.stacktrace",
@@ -211,6 +213,7 @@ def normalize_hit(hit: dict[str, Any]) -> dict[str, Any]:
         "host": pick_first(hit, ["host.name", "host.hostname", "kubernetes.pod.name"]),
         "caller": pick_first(hit, ["decode.caller"]),
         "alert_msg": pick_first(hit, ["decode.alert_msg", "error.message"]),
+        "alert_error": pick_first(hit, ["decode.alert_error", "error.message"]),
     }
 
 
@@ -289,6 +292,9 @@ class ElasticsearchClient:
             f"/api/console/proxy?path={proxy_path}&method=POST",
             query,
         )
+
+    def get_json(self, path: str) -> dict[str, Any]:
+        return self._request("GET", path)
 
 
 def print_json(data: dict[str, Any]) -> None:
