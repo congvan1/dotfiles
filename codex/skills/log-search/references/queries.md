@@ -118,10 +118,34 @@ python3 ~/.codex/skills/log-search/scripts/fetch_index_docs.py \
   --text 'EOFException'
 ```
 
+Kubernetes metadata filters:
+
+```bash
+# Pod name is a keyword field; use --pod instead of --text for full or partial pod names.
+python3 ~/.codex/skills/log-search/scripts/fetch_index_docs.py \
+  --dataview dev:sn-dev-workload \
+  --from '2026-06-20T02:39:00Z' \
+  --to '2026-06-20T02:41:10Z' \
+  --level all \
+  --pod 5hsbq
+
+# Narrow to one shipped container log file when ES has multiple files from restarts.
+python3 ~/.codex/skills/log-search/scripts/fetch_index_docs.py \
+  --index '*subscription-service-orchestrator-message-relayer*' \
+  --from '2026-06-20T02:48:13Z' \
+  --to '2026-06-20T02:48:41Z' \
+  --level all \
+  --log-file 'subscription-service-orchestrator-message-relayer-0'
+```
+
 ## Notes
 
 - Default timezone is `Asia/Ho_Chi_Minh`.
 - Prefer `error`, then `warn`.
 - Default output is CSV for LLM token efficiency.
+- CSV uses Unix milliseconds for time fields and `-` for `end_time` when `count` is `1`.
+- CSV uses `^` for repeated `level`, `caller`, `component`, or `pod` values from the previous row.
+- Add `-h` for human-readable aligned table output with ISO timestamps and bold colors for level/count hotspots; command help is `--help`.
 - Use `--output compact` when you want structured JSON with normalized fields.
 - Use `--output full` only when compact or CSV hides details you need.
+- Use `--pod`, `--container`, and `--log-file` for Kubernetes keyword fields; `--text` is for analyzed log content.

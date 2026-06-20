@@ -20,11 +20,20 @@ Use this skill when the user wants log-based diagnosis, especially for Pulsar, b
 6. Prefer the default CSV output for LLM analysis because it removes JSON envelopes and reduces token usage.
 7. Use `--output message` when the user only wants the raw log message field with timestamp and pod.
 8. Use `--output compact` when JSON structure is helpful and `--output full` only when needed.
-9. CSV output is intentionally minimal:
+9. Use structured filters for Kubernetes metadata:
+   - `--pod` filters `kubernetes.pod.name` by exact name, wildcard, or substring.
+   - `--container` filters `kubernetes.container.name` by exact name, wildcard, or substring.
+   - `--log-file` filters `log.file.path` by exact path, wildcard, or substring. This is useful when Elasticsearch has multiple rotated/restarted container log files and you need to match a single `kubectl logs` source.
+   - Do not use `--text` to filter pod/container names; those fields are keywords and may not tokenize partial values.
+10. CSV output is intentionally minimal:
    - keeps `start_time`, `end_time`, `count`, `level`, `caller`, `alert_msg`, `component`, `pod`
+   - writes `start_time` and ranged `end_time` as Unix milliseconds to save tokens while preserving millisecond precision
+   - writes `end_time` as `-` when `count` is `1`
+   - writes `^` for repeated `level`, `caller`, `component`, or `pod` values from the previous CSV row
+   - use `-h` for human-readable aligned table output with ISO timestamps; level is bold colored (`info` green, `warn` yellow, `error` red), and `count` is bold yellow when above 10% of `--limit` or bold red when above 30%
    - collapses duplicate log rows only when they are consecutive in timeline order into one ranged row
    - does not include `message` by default because it is often a noisy duplicate of `alert_msg`
-10. Compact JSON output is intentionally minimal:
+11. Compact JSON output is intentionally minimal:
    - keeps `timestamp`, `level`, `caller`, `alert_msg`, `component`, `pod`
    - only includes a shortened fallback `message` when `alert_msg` is empty
    - use `--message-chars` or `--output full` only when needed

@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 import csv
+from datetime import datetime
 import io
 from dataclasses import dataclass
 from typing import Any
@@ -17,6 +18,12 @@ LEVEL_ALIASES = {
     "warn": ["WARN", "WARNING", "Warning", "warn", "warning"],
     "info": ["INFO", "Info", "info"],
 }
+
+ANSI_RESET = "\033[0m"
+ANSI_BOLD_GREEN = "\033[1;32m"
+ANSI_BOLD_YELLOW = "\033[1;33m"
+ANSI_BOLD_RED = "\033[1;31m"
+CSV_DITTO_MARK = "^"
 
 COMPACT_SOURCE_FIELDS = [
     "@timestamp",
@@ -122,6 +129,11 @@ def build_case_insensitive_keyword_filter(field: str, values: list[str]) -> dict
     }
 
 
+def build_contains_keyword_filter(field: str, value: str) -> dict[str, Any]:
+    pattern = value if any(wildcard in value for wildcard in ("*", "?")) else f"*{value}*"
+    return build_case_insensitive_keyword_filter(field, [pattern])
+
+
 def build_level_filter(level: str) -> dict[str, Any] | None:
     if level == "all":
         return None
@@ -214,6 +226,15 @@ def build_query(
             }
         )
 
+    if args.pod:
+        must.append(build_contains_keyword_filter("kubernetes.pod.name", args.pod))
+
+    if args.container:
+        must.append(build_contains_keyword_filter("kubernetes.container.name", args.container))
+
+    if args.log_file:
+        must.append(build_contains_keyword_filter("log.file.path", args.log_file))
+
     query = {
         "size": page_size,
         "sort": [{"@timestamp": {"order": args.sort}}],
@@ -229,7 +250,11 @@ def build_query(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Fetch documents from Elasticsearch by index pattern.")
+    parser = argparse.ArgumentParser(
+        description="Fetch documents from Elasticsearch by index pattern.",
+        add_help=False,
+    )
+    parser.add_argument("--help", action="help", help="Show this help message and exit.")
     parser.add_argument(
         "--index-pattern",
         "--index",
@@ -257,6 +282,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=50, help="Max number of docs. Default: 50")
     parser.add_argument("--level", default="all", choices=["error", "warn", "info", "all"])
     parser.add_argument("--text", help="Optional text filter, for example: timeout OR ledger")
+    parser.add_argument("--pod", help="Filter kubernetes.pod.name by exact name, wildcard, or substring.")
+    parser.add_argument("--container", help="Filter kubernetes.container.name by exact name, wildcard, or substring.")
+    parser.add_argument("--log-file", help="Filter log.file.path by exact path, wildcard, or substring.")
+    parser.add_argument(
+        "-h",
+        dest="human_readable",
+        action="store_true",
+        help="Human-readable table output with ISO timestamps. Help is --help.",
+    )
     parser.add_argument("--sort", default="desc", choices=["asc", "desc"])
     parser.add_argument(
         "--output",
@@ -276,6 +310,8 @@ def parse_args() -> argparse.Namespace:
 def build_csv_text(
     events: list[dict[str, Any]],
     raw_hits: list[dict[str, Any]],
+    *,
+    human_readable: bool = False,
 ) -> str:
     grouped_events = build_grouped_csv_events(events, raw_hits)
     output_buffer = io.StringIO()
@@ -293,20 +329,119 @@ def build_csv_text(
         ]
     )
 
+    previous_ditto_values: dict[str, str | None] = {}
     for grouped_event in grouped_events:
+        level = ditto_csv_value("level", grouped_event.key.level, previous_ditto_values)
+        caller = ditto_csv_value("caller", grouped_event.key.caller, previous_ditto_values)
+        component = ditto_csv_value("component", grouped_event.key.component, previous_ditto_values)
+        pod = ditto_csv_value("pod", grouped_event.key.pod, previous_ditto_values)
         writer.writerow(
             [
-                grouped_event.start_time,
-                grouped_event.end_time,
+                format_csv_time(grouped_event.start_time, human_readable=human_readable),
+                (
+                    "-"
+                    if grouped_event.count == 1
+                    else format_csv_time(grouped_event.end_time, human_readable=human_readable)
+                ),
                 grouped_event.count,
-                grouped_event.key.level,
-                grouped_event.key.caller,
+                level,
+                caller,
                 grouped_event.key.alert_msg,
-                grouped_event.key.component,
-                grouped_event.key.pod,
+                component,
+                pod,
             ]
         )
     return output_buffer.getvalue().rstrip()
+
+
+def ditto_csv_value(field_name: str, value: str | None, previous_values: dict[str, str | None]) -> str | None:
+    previous_value = previous_values.get(field_name)
+    previous_values[field_name] = value
+    if value not in (None, "") and value == previous_value:
+        return CSV_DITTO_MARK
+    return value
+
+
+def build_table_text(
+    events: list[dict[str, Any]],
+    raw_hits: list[dict[str, Any]],
+    *,
+    limit: int,
+) -> str:
+    grouped_events = build_grouped_csv_events(events, raw_hits)
+    headers = ["start_time", "end_time", "count", "level", "caller", "component", "pod", "alert_msg"]
+    rows: list[list[str]] = []
+
+    for grouped_event in grouped_events:
+        rows.append(
+            [
+                format_csv_time(grouped_event.start_time, human_readable=True),
+                "-" if grouped_event.count == 1 else format_csv_time(grouped_event.end_time, human_readable=True),
+                str(grouped_event.count),
+                format_table_cell(grouped_event.key.level),
+                format_table_cell(grouped_event.key.caller),
+                format_table_cell(grouped_event.key.component),
+                format_table_cell(grouped_event.key.pod),
+                format_table_cell(grouped_event.key.alert_msg),
+            ]
+        )
+
+    widths = [
+        max(len(row[idx]) for row in [headers, *rows])
+        for idx in range(len(headers) - 1)
+    ]
+    lines = [format_table_row(headers, widths, limit=limit)]
+    lines.append(format_table_row(["-" * len(header) for header in headers], widths))
+    lines.extend(format_table_row(row, widths, limit=limit) for row in rows)
+    return "\n".join(lines)
+
+
+def format_table_row(row: list[str], widths: list[int], *, limit: int | None = None) -> str:
+    padded = [color_table_cell(idx, row[idx].ljust(widths[idx]), row[idx], limit) for idx in range(len(widths))]
+    return "  ".join([*padded, color_table_cell(len(row) - 1, row[-1], row[-1], limit)])
+
+
+def color_table_cell(column_idx: int, padded_value: str, raw_value: str, limit: int | None) -> str:
+    if column_idx == 2 and limit:
+        try:
+            count = int(raw_value)
+        except ValueError:
+            return padded_value
+        ratio = count / limit
+        if ratio > 0.3:
+            return f"{ANSI_BOLD_RED}{padded_value}{ANSI_RESET}"
+        if ratio > 0.1:
+            return f"{ANSI_BOLD_YELLOW}{padded_value}{ANSI_RESET}"
+        return padded_value
+
+    if column_idx == 3:
+        normalized = raw_value.lower()
+        if normalized == "error":
+            return f"{ANSI_BOLD_RED}{padded_value}{ANSI_RESET}"
+        if normalized in {"warn", "warning"}:
+            return f"{ANSI_BOLD_YELLOW}{padded_value}{ANSI_RESET}"
+        if normalized == "info":
+            return f"{ANSI_BOLD_GREEN}{padded_value}{ANSI_RESET}"
+
+    return padded_value
+
+
+def format_table_cell(value: Any) -> str:
+    if value in (None, ""):
+        return "-"
+    return " ".join(str(value).split())
+
+
+def format_csv_time(value: str, *, human_readable: bool = False) -> str:
+    if not value:
+        return ""
+    if human_readable:
+        return value
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return value
+    return str(int(parsed.timestamp() * 1000))
 
 
 def build_message_text(
@@ -444,7 +579,10 @@ def main() -> None:
     index_counter = Counter(event.get("index") or "UNKNOWN" for event in events)
 
     if args.output == "csv":
-        print(build_csv_text(events, raw_hits))
+        if args.human_readable:
+            print(build_table_text(events, raw_hits, limit=args.limit))
+            return
+        print(build_csv_text(events, raw_hits, human_readable=args.human_readable))
         return
 
     if args.output == "message":
@@ -463,6 +601,9 @@ def main() -> None:
                 "limit": args.limit,
                 "level": args.level,
                 "text": args.text,
+                "pod": args.pod,
+                "container": args.container,
+                "log_file": args.log_file,
                 "output": args.output,
                 "returned": len(raw_hits),
                 "total_hits": total_hits,
