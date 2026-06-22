@@ -18,6 +18,7 @@
     "rustup"
     "go"
     "gcc"
+    "openjdk@21"
     "pkgconf"
     "tldr"
     "stow"

@@ -943,6 +943,7 @@ alias kg = kubectl get
 alias kd = kubectl describe
 alias kdel = kubectl delete
 alias kl = kubectl logs
+alias kp = kubectl get pod
 alias kgpo = kubectl get pod
 alias kgd = kubectl get deployments
 alias kc = kubectx
@@ -969,4 +970,3 @@ if ($gem_bin | path exists) {
   $env.PATH = ($env.PATH | prepend $gem_bin)
 }
 $env.DIRENV_LOG_FORMAT = ""
-

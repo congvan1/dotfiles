@@ -55,6 +55,11 @@ export LANG=en_US.UTF-8
 
 export EDITOR=/opt/homebrew/bin/nvim
 
+if command -v brew >/dev/null 2>&1 && [ -d "$(brew --prefix openjdk@21 2>/dev/null)/libexec/openjdk.jdk/Contents/Home" ]; then
+  export JAVA_HOME="$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home"
+  export PATH="$JAVA_HOME/bin:$PATH"
+fi
+
 alias la=tree
 alias cat=bat
 alias C=pbcopy
@@ -426,7 +431,7 @@ alias vngssh='cd "$VNG_SSH_DIR"'
 
 export scripts_path="$HOME/dotfiles/scripts"
 [[ -x "$scripts_path/git-puller.sh" ]] && alias puller="bash $scripts_path/git-puller.sh"
-[[ -x "$scripts_path/mr-slack.sh" ]] && alias slackmr="bash $scripts_path/mr-slack.sh"
+[[ -x "$scripts_path/mr-slack/mr-slack.sh" ]] && alias slackmr="bash $scripts_path/mr-slack/mr-slack.sh"
 
 # ProxyPal - Amp CLI Configuration (alternative to settings.json)
 export AMP_URL="http://localhost:8317"

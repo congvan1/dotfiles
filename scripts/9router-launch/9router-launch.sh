@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/shell.sh
+source "${SCRIPT_DIR}/../lib/shell.sh"
+
 VERSION="0.4.29"
 LABEL="dev.decolua.9router"
 DEFAULT_PORT="20128"
@@ -20,12 +24,6 @@ OPENCLAW_MODELS=(
   "kr/glm-5"
   "kr/MiniMax-M2.5"
 )
-
-bold() { printf '\033[1m%s\033[0m\n' "$*"; }
-ok() { printf '\033[1;32mPASS\033[0m %s\n' "$*" >&2; }
-warn() { printf '\033[1;33mWARN\033[0m %s\n' "$*" >&2; }
-fail() { printf '\033[1;31mFAIL\033[0m %s\n' "$*" >&2; }
-die() { fail "$*"; exit 1; }
 
 usage() {
   cat <<EOF
@@ -112,10 +110,6 @@ api_url() {
 
 launchd_domain() {
   printf 'gui/%s/%s\n' "$(id -u)" "${LABEL}"
-}
-
-need_cmd() {
-  command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
 }
 
 ensure_node() {
@@ -353,9 +347,9 @@ check_kiro() {
 }
 
 setup_openclaw_free() {
-  need_cmd curl
-  need_cmd jq
-  need_cmd launchctl
+  require_cmd curl
+  require_cmd jq
+  require_cmd launchctl
 
   bold "9router OpenClaw Free Setup"
   start_service

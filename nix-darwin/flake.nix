@@ -225,23 +225,23 @@ EOF
         };
       };
 
-      launchd.user.agents."9router" = {
-        serviceConfig = {
-          Label = "dev.decolua.9router";
-          ProgramArguments = [
-            "/Users/van/dotfiles/scripts/9router-launch.sh"
-            "serve"
-          ];
-          RunAtLoad = true;
-          KeepAlive = true;
-          StandardOutPath = "/Users/van/.9router/logs/launchd.out.log";
-          StandardErrorPath = "/Users/van/.9router/logs/launchd.err.log";
-          EnvironmentVariables = {
-            HOME = "/Users/van";
-            PATH = "/Users/van/.npm-global/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
-          };
-        };
-      };
+      # launchd.user.agents."9router" = {
+      #   serviceConfig = {
+      #     Label = "dev.decolua.9router";
+      #     ProgramArguments = [
+      #       "/Users/van/dotfiles/scripts/9router-launch/9router-launch.sh"
+      #       "serve"
+      #     ];
+      #     RunAtLoad = true;
+      #     KeepAlive = true;
+      #     StandardOutPath = "/Users/van/.9router/logs/launchd.out.log";
+      #     StandardErrorPath = "/Users/van/.9router/logs/launchd.err.log";
+      #     EnvironmentVariables = {
+      #       HOME = "/Users/van";
+      #       PATH = "/Users/van/.npm-global/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+      #     };
+      #   };
+      # };
 
       launchd.user.agents."colima" = {
         serviceConfig = {

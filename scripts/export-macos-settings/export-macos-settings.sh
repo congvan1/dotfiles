@@ -2,15 +2,15 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/shell.sh
+source "${SCRIPT_DIR}/../lib/shell.sh"
+
 timestamp="$(date +%Y%m%d-%H%M%S)"
 output_dir="${1:-reports/macos-settings-${timestamp}}"
 domain_dir="${output_dir}/domains"
 
 mkdir -p "$domain_dir"
-
-log() {
-  printf '%s\n' "$1"
-}
 
 read_default() {
   local domain="$1"
@@ -24,9 +24,9 @@ export_domain() {
   local file="$domain_dir/${domain}.plist"
 
   if defaults export "$domain" "$file" 2>/dev/null; then
-    log "exported ${domain}"
+    info "exported ${domain}"
   else
-    log "skipped ${domain}"
+    info "skipped ${domain}"
   fi
 }
 
@@ -81,5 +81,5 @@ for domain in "${domains[@]}"; do
   export_domain "$domain"
 done
 
-log ""
-log "Wrote snapshot to ${output_dir}/summary.md"
+printf '\n'
+info "Wrote snapshot to ${output_dir}/summary.md"

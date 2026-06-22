@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/shell.sh
+source "${SCRIPT_DIR}/../lib/shell.sh"
+
 usage() {
   cat <<'EOF'
 Usage: mr-slack.sh [options]
@@ -18,7 +22,7 @@ Options:
   -h, --help                  Show this help.
 
 Environment:
-  MR_SLACK_ENV                Env file path. Defaults to $HOME/dotfiles/.env.
+  MR_SLACK_ENV                Env file path. Defaults to this script directory's .env.
   MR_TARGET_BRANCH            Default target branch.
   GITLAB_HOST                 Optional GitLab host override.
   SLACK_BOT_TOKEN             Slack bot token used with chat.postMessage.
@@ -29,35 +33,6 @@ Environment:
   SLACK_WEBHOOK_URL           Optional fallback Slack incoming webhook URL.
   SLACK_REVIEWER_OPTIONS      Bash array of selectable reviewers, e.g. ("Van <@U123>" "An <@U456>").
 EOF
-}
-
-setup_colors() {
-  if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
-    color_info=$'\033[1;32m'
-    color_error=$'\033[1;31m'
-    color_reset=$'\033[0m'
-  else
-    color_info=""
-    color_error=""
-    color_reset=""
-  fi
-}
-
-info() {
-  printf '%s[INFO]%s %s\n' "$color_info" "$color_reset" "$*"
-}
-
-error() {
-  printf '%s[ERROR]%s %s\n' "$color_error" "$color_reset" "$*" >&2
-}
-
-die() {
-  error "$*"
-  exit 1
-}
-
-require_cmd() {
-  command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
 }
 
 branch_to_message() {
@@ -89,7 +64,7 @@ extract_url() {
 }
 
 load_env() {
-  env_file="${MR_SLACK_ENV:-$HOME/dotfiles/.env}"
+  env_file="${MR_SLACK_ENV:-${SCRIPT_DIR}/.env}"
 
   if [[ -f "$env_file" ]]; then
     # shellcheck disable=SC1090
@@ -550,7 +525,6 @@ notify_slack() {
 }
 
 main() {
-  setup_colors
   load_env
   parse_args "$@"
   check_dependencies
