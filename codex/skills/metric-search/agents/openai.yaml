@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metric Search"
+  short_description: "Query VTVPrime live metrics"
+  default_prompt: "Use $metric-search to query VTVPrime metrics and analyze Pulsar broker, backlog, storage, or BookKeeper signals."

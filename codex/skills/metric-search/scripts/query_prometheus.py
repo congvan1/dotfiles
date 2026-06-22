@@ -5,7 +5,7 @@ import argparse
 import csv
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
@@ -23,6 +23,7 @@ from catalog import MetricCatalogRegistry, build_metric_catalog_registry
 
 TIMEOUT_SECONDS = 30
 DEFAULT_RANGE_STEP = "1m"
+CSV_DITTO_MARK = "^"
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,20 @@ class MetricQueryWindow:
     step: str
 
 
+@dataclass(frozen=True)
+class MetricSampleGroupKey:
+    label_values: tuple[str, ...]
+    value: str
+
+
+@dataclass
+class MetricSampleGroup:
+    start_time: Any
+    end_time: Any
+    count: int
+    key: MetricSampleGroupKey
+
+
 def fetch_prometheus_response(
     base_url: str,
     api_path: str,
@@ -93,15 +108,39 @@ def normalize_timestamp(raw_value: str) -> str:
     return str(parsed_datetime.timestamp())
 
 
+def format_prometheus_timestamp(raw_value: Any) -> str:
+    try:
+        timestamp = float(raw_value)
+    except (TypeError, ValueError):
+        return str(raw_value)
+    return datetime.fromtimestamp(timestamp, timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def format_prometheus_timestamp_ms(raw_value: Any) -> str:
+    try:
+        timestamp = float(raw_value)
+    except (TypeError, ValueError):
+        return str(raw_value)
+    return str(int(timestamp * 1000))
+
+
 def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Query VTVPrime Prometheus endpoints with a reusable metric catalog."
+        description="Query VTVPrime Prometheus endpoints with a reusable metric catalog.",
+        add_help=False,
+    )
+    parser.add_argument("--help", action="help", help="Show this help message and exit.")
+    parser.add_argument(
+        "-h",
+        dest="human_readable",
+        action="store_true",
+        help="Human-readable query output as an aligned table with ISO timestamps. Help is --help.",
     )
     parser.add_argument(
         "--output",
         choices=("json", "csv"),
-        default="json",
-        help="Output format. CSV is optimized for compact LLM-friendly range results.",
+        default="csv",
+        help="Output format. CSV is the compact default for LLM-friendly query results.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -110,26 +149,35 @@ def build_argument_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def add_help_argument(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--help", action="help", help="Show this help message and exit.")
+
+
 def add_catalog_commands(subparsers: argparse._SubParsersAction[Any]) -> None:
-    catalog_parser = subparsers.add_parser("catalog", help="Inspect the metric catalog.")
+    catalog_parser = subparsers.add_parser("catalog", help="Inspect the metric catalog.", add_help=False)
+    add_help_argument(catalog_parser)
     catalog_subparsers = catalog_parser.add_subparsers(
         dest="catalog_command",
         required=True,
     )
 
-    list_parser = catalog_subparsers.add_parser("list", help="List metrics.")
+    list_parser = catalog_subparsers.add_parser("list", help="List metrics.", add_help=False)
+    add_help_argument(list_parser)
     list_parser.add_argument("--component", required=True)
 
     describe_parser = catalog_subparsers.add_parser(
         "describe",
         help="Describe one metric.",
+        add_help=False,
     )
+    add_help_argument(describe_parser)
     describe_parser.add_argument("--component", required=True)
     describe_parser.add_argument("--metric", required=True)
 
 
 def add_query_commands(subparsers: argparse._SubParsersAction[Any]) -> None:
-    query_parser = subparsers.add_parser("query", help="Run Prometheus queries.")
+    query_parser = subparsers.add_parser("query", help="Run Prometheus queries.", add_help=False)
+    add_help_argument(query_parser)
     query_subparsers = query_parser.add_subparsers(
         dest="query_command",
         required=True,
@@ -138,7 +186,9 @@ def add_query_commands(subparsers: argparse._SubParsersAction[Any]) -> None:
     metric_parser = query_subparsers.add_parser(
         "metric",
         help="Run the default PromQL for a catalog metric.",
+        add_help=False,
     )
+    add_help_argument(metric_parser)
     metric_parser.add_argument("--env", required=True, choices=("dev", "stg", "prd"))
     metric_parser.add_argument("--component", required=True)
     metric_parser.add_argument("--metric", required=True)
@@ -153,7 +203,9 @@ def add_query_commands(subparsers: argparse._SubParsersAction[Any]) -> None:
     promql_parser = query_subparsers.add_parser(
         "promql",
         help="Run a custom instant PromQL expression.",
+        add_help=False,
     )
+    add_help_argument(promql_parser)
     promql_parser.add_argument("--env", required=True, choices=("dev", "stg", "prd"))
     promql_parser.add_argument("--expr", required=True)
     promql_parser.add_argument("--time")
@@ -161,7 +213,9 @@ def add_query_commands(subparsers: argparse._SubParsersAction[Any]) -> None:
     range_parser = query_subparsers.add_parser(
         "range",
         help="Run the default PromQL for a catalog metric over a time range.",
+        add_help=False,
     )
+    add_help_argument(range_parser)
     range_parser.add_argument("--env", required=True, choices=("dev", "stg", "prd"))
     range_parser.add_argument("--component", required=True)
     range_parser.add_argument("--metric", required=True)
@@ -375,7 +429,9 @@ def parse_duration(raw_value: str) -> timedelta:
 
 def main() -> int:
     parser = build_argument_parser()
-    arguments = parser.parse_args()
+    cleaned_arguments, human_readable = extract_human_readable_flag(sys.argv[1:])
+    arguments = parser.parse_args(cleaned_arguments)
+    arguments.human_readable = human_readable or arguments.human_readable
     registry = build_metric_catalog_registry()
 
     try:
@@ -386,22 +442,65 @@ def main() -> int:
     except ValueError as error:
         parser.error(str(error))
 
-    print(render_output(result, arguments.output))
+    print(render_output(result, arguments.output, human_readable=arguments.human_readable))
     return 0
 
 
-def render_output(result: dict[str, Any], output_format: str) -> str:
+def extract_human_readable_flag(raw_arguments: list[str]) -> tuple[list[str], bool]:
+    cleaned_arguments: list[str] = []
+    human_readable = False
+    for argument in raw_arguments:
+        if argument == "-h":
+            human_readable = True
+            continue
+        cleaned_arguments.append(argument)
+    return cleaned_arguments, human_readable
+
+
+def render_output(
+    result: dict[str, Any],
+    output_format: str,
+    *,
+    human_readable: bool = False,
+) -> str:
+    if human_readable:
+        return render_human_output(result)
     if output_format == "json":
         return json.dumps(result, indent=2, sort_keys=True)
     return render_csv_output(result)
 
 
-def render_csv_output(result: dict[str, Any]) -> str:
+def render_human_output(result: dict[str, Any]) -> str:
+    if "response" not in result:
+        return json.dumps(result, indent=2, sort_keys=True)
+
     response = result.get("response", {})
     data = response.get("data", {})
     series_list = data.get("result", [])
     if not series_list:
-        return "timestamp,value"
+        return "timestamp  value\n---------  -----"
+
+    label_names = sorted(
+        {
+            label_name
+            for series in series_list
+            for label_name in series.get("metric", {}).keys()
+        }
+    )
+    rows = build_metric_rows(series_list, label_names, human_readable_time=True)
+    headers = metric_table_headers(series_list)
+    return render_table([*headers, *label_names, "value"], rows)
+
+
+def render_csv_output(result: dict[str, Any]) -> str:
+    if "response" not in result:
+        return json.dumps(result, indent=2, sort_keys=True)
+
+    response = result.get("response", {})
+    data = response.get("data", {})
+    series_list = data.get("result", [])
+    if not series_list:
+        return "start_time,end_time,count,value"
 
     label_names = sorted(
         {
@@ -418,15 +517,173 @@ def render_csv_output(result: dict[str, Any]) -> str:
     raise ValueError("Unsupported Prometheus response shape for CSV output.")
 
 
+def build_metric_rows(
+    series_list: list[dict[str, Any]],
+    label_names: list[str],
+    *,
+    human_readable_time: bool = False,
+    compact_csv: bool = False,
+) -> list[list[str]]:
+    if any("values" in series for series in series_list):
+        return build_grouped_metric_rows(
+            series_list,
+            label_names,
+            human_readable_time=human_readable_time,
+            compact_csv=compact_csv,
+        )
+
+    rows: list[list[str]] = []
+    previous_label_values: dict[str, str] = {}
+    for series in series_list:
+        metric_labels = series.get("metric", {})
+        raw_label_values = [str(metric_labels.get(label_name, "")) for label_name in label_names]
+        if "values" in series:
+            for timestamp, value in series["values"]:
+                rendered_timestamp = format_metric_timestamp(timestamp, human_readable_time=human_readable_time)
+                label_values = format_label_values(label_names, raw_label_values, previous_label_values, compact_csv)
+                rows.append([rendered_timestamp, *label_values, str(value)])
+            continue
+        if "value" in series:
+            timestamp, value = series["value"]
+            rendered_timestamp = format_metric_timestamp(timestamp, human_readable_time=human_readable_time)
+            label_values = format_label_values(label_names, raw_label_values, previous_label_values, compact_csv)
+            rows.append([rendered_timestamp, *label_values, str(value)])
+    return rows
+
+
+def build_grouped_metric_rows(
+    series_list: list[dict[str, Any]],
+    label_names: list[str],
+    *,
+    human_readable_time: bool = False,
+    compact_csv: bool = False,
+) -> list[list[str]]:
+    rows: list[list[str]] = []
+    previous_label_values: dict[str, str] = {}
+    for series in series_list:
+        metric_labels = series.get("metric", {})
+        raw_label_values = tuple(str(metric_labels.get(label_name, "")) for label_name in label_names)
+        for grouped_sample in group_metric_samples(series.get("values", []), raw_label_values):
+            rendered_start_time = format_metric_timestamp(
+                grouped_sample.start_time,
+                human_readable_time=human_readable_time,
+            )
+            rendered_end_time = (
+                "-"
+                if grouped_sample.count == 1
+                else format_metric_timestamp(grouped_sample.end_time, human_readable_time=human_readable_time)
+            )
+            label_values = format_label_values(
+                label_names,
+                list(grouped_sample.key.label_values),
+                previous_label_values,
+                compact_csv,
+            )
+            rows.append(
+                [
+                    rendered_start_time,
+                    rendered_end_time,
+                    str(grouped_sample.count),
+                    *label_values,
+                    grouped_sample.key.value,
+                ]
+            )
+    return rows
+
+
+def group_metric_samples(
+    values: list[list[Any]],
+    label_values: tuple[str, ...],
+) -> list[MetricSampleGroup]:
+    grouped_samples: list[MetricSampleGroup] = []
+    current_group: MetricSampleGroup | None = None
+
+    for timestamp, value in values:
+        group_key = MetricSampleGroupKey(label_values=label_values, value=str(value))
+        if current_group is None or current_group.key != group_key:
+            current_group = MetricSampleGroup(
+                start_time=timestamp,
+                end_time=timestamp,
+                count=1,
+                key=group_key,
+            )
+            grouped_samples.append(current_group)
+            continue
+
+        current_group.end_time = timestamp
+        current_group.count += 1
+
+    return grouped_samples
+
+
+def metric_table_headers(series_list: list[dict[str, Any]]) -> list[str]:
+    if any("values" in series for series in series_list):
+        return ["start_time", "end_time", "count"]
+    return ["timestamp"]
+
+
+def format_metric_timestamp(raw_value: Any, *, human_readable_time: bool = False) -> str:
+    if human_readable_time:
+        return format_prometheus_timestamp(raw_value)
+    return format_prometheus_timestamp_ms(raw_value)
+
+
+def format_label_values(
+    label_names: list[str],
+    values: list[str],
+    previous_values: dict[str, str],
+    compact_csv: bool,
+) -> list[str]:
+    return [
+        format_label_value(label_name, values[idx], previous_values, compact_csv)
+        for idx, label_name in enumerate(label_names)
+    ]
+
+
+def format_label_value(
+    label_name: str,
+    value: str,
+    previous_values: dict[str, str],
+    compact_csv: bool,
+) -> str:
+    if not compact_csv:
+        return value
+
+    previous_value = previous_values.get(label_name)
+    previous_values[label_name] = value
+    if value and value == previous_value:
+        return CSV_DITTO_MARK
+    return value
+
+
+def render_table(headers: list[str], rows: list[list[str]]) -> str:
+    normalized_rows = [[format_table_cell(cell) for cell in row] for row in rows]
+    widths = [
+        max(len(row[idx]) for row in [headers, *normalized_rows])
+        for idx in range(len(headers) - 1)
+    ]
+    lines = [format_table_row(headers, widths)]
+    lines.append(format_table_row(["-" * len(header) for header in headers], widths))
+    lines.extend(format_table_row(row, widths) for row in normalized_rows)
+    return "\n".join(lines)
+
+
+def format_table_row(row: list[str], widths: list[int]) -> str:
+    padded = [row[idx].ljust(widths[idx]) for idx in range(len(widths))]
+    return "  ".join([*padded, row[-1]])
+
+
+def format_table_cell(value: Any) -> str:
+    if value in (None, ""):
+        return "-"
+    return " ".join(str(value).split())
+
+
 def render_range_csv(series_list: list[dict[str, Any]], label_names: list[str]) -> str:
     output_buffer = io.StringIO()
     writer = csv.writer(output_buffer, lineterminator="\n")
-    writer.writerow(["timestamp", *label_names, "value"])
-    for series in series_list:
-        metric_labels = series.get("metric", {})
-        label_values = [metric_labels.get(label_name, "") for label_name in label_names]
-        for timestamp, value in series["values"]:
-            writer.writerow([timestamp, *label_values, value])
+    writer.writerow(["start_time", "end_time", "count", *label_names, "value"])
+    writer.writerows(build_metric_rows(series_list, label_names, compact_csv=True))
     return output_buffer.getvalue().rstrip()
 
 
@@ -434,11 +691,7 @@ def render_instant_csv(series_list: list[dict[str, Any]], label_names: list[str]
     output_buffer = io.StringIO()
     writer = csv.writer(output_buffer, lineterminator="\n")
     writer.writerow(["timestamp", *label_names, "value"])
-    for series in series_list:
-        metric_labels = series.get("metric", {})
-        label_values = [metric_labels.get(label_name, "") for label_name in label_names]
-        timestamp, value = series["value"]
-        writer.writerow([timestamp, *label_values, value])
+    writer.writerows(build_metric_rows(series_list, label_names, compact_csv=True))
     return output_buffer.getvalue().rstrip()
 
 
