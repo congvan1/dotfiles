@@ -93,6 +93,16 @@ source ~/.zshrc
 - **`aerospace/`** - Aerospace window manager
 - **`sketchybar/`** - Sketchybar status bar
 
+### Agent skills
+
+- **`skills/`** - Shared Agent Skills library (`SKILL.md`) for Codex, Claude, Gemini, Grok, etc.
+- **`scripts/sync-skills/sync-skills.sh`** - Symlink (or copy) skills into each agent’s user skills dir
+
+```bash
+./scripts/sync-skills/sync-skills.sh install all
+./scripts/sync-skills/sync-skills.sh status
+```
+
 ## 🛠️ Installed Packages
 
 ### Development Tools
@@ -166,6 +176,9 @@ kns        # kubens
 # Docker
 dco        # docker compose
 dps        # docker ps
+
+# Stardew VNC
+vncviewer localhost:5902  # password: 1234
 
 # Utilities
 C          # pbcopy (copy to clipboard)

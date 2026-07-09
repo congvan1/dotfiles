@@ -71,6 +71,7 @@
     "dive"              # Exploring image, layers, size
     "lima"
     "colima"            # Lightweight container runtime
+    "tiger-vnc"          # Native VNC viewer
 
     # Audio/Video
     "ffmpeg"
@@ -137,7 +138,6 @@
     "codex"
     "font-jetbrains-mono-nerd-font"
     "maccy"             # Clipboard manager
-    "multipass"         # Ubuntu VMs
     "google-chrome"
     "microsoft-edge"
     "brave-browser"
@@ -148,7 +148,6 @@
     "spotify"
     "telegram"
     "zalo"
-    "1password"
     "openvpn-connect"
     "ghostty"           # Modern terminal emulator
     "yubico-authenticator"
