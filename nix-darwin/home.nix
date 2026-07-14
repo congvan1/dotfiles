@@ -1,7 +1,7 @@
 # home.nix
 # home-manager switch 
 
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   home.username = "van";
@@ -18,10 +18,12 @@
 
     # Security and supply-chain scanning
     pkgs.gitleaks
+    pkgs.gobuster
     pkgs.grype
     pkgs.hadolint
     pkgs.kube-linter
     pkgs.kube-score
+    pkgs.metasploit
     pkgs.osv-scanner
     pkgs.pre-commit
     pkgs.semgrep
@@ -33,6 +35,16 @@
     (pkgs.writeShellScriptBin "playwright" ''
       exec ${pkgs.playwright}/cli.js "$@"
     '')
+
+    # Drop audio deps: pydub/speechrecognition pull ffmpeg-full→kvazaar (breaks Darwin builds).
+    # Audio transcription stays optional; pdf/docx/pptx/xlsx still work.
+    (pkgs.python3Packages.markitdown.overridePythonAttrs (old: {
+      dependencies = lib.filter (
+        d: !lib.elem (lib.getName d) [ "pydub" "speechrecognition" ]
+      ) old.dependencies;
+      # ponytail: skip tests that need full optional set / network
+      doCheck = false;
+    }))
   ];
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage

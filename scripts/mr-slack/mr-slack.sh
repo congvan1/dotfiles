@@ -143,27 +143,56 @@ git_remote_url() {
   git remote get-url origin 2>/dev/null || git remote get-url "$(git remote | head -n 1)"
 }
 
+# Extract bare GitLab hostname for glab --hostname.
+# Supports:
+#   ssh://git@gitlab.example:2222/group/repo.git
+#   git@gitlab.example:group/repo.git
+#   https://gitlab.example/group/repo.git
+#   https://oauth2:glpat-xxx@gitlab.example/group/repo.git
+#   https://user:token@gitlab.example:443/group/repo.git
 gitlab_host_from_remote() {
   local remote_url="$1"
+  local host=""
+
+  [[ -n "$remote_url" ]] || return 1
+  remote_url="${remote_url%.git}"
 
   case "$remote_url" in
-    ssh://*@*)
-      remote_url="${remote_url#ssh://*@}"
-      printf '%s\n' "${remote_url%%[:/]*}"
+    ssh://*)
+      # ssh://user@host:port/path  or  ssh://user@host/path
+      remote_url="${remote_url#ssh://}"
+      remote_url="${remote_url#*@}"
+      host="${remote_url%%/*}"
+      host="${host%%:*}"
       ;;
-    git@*:*)
+    git@*)
+      # git@host:group/repo  (scp-like)
       remote_url="${remote_url#git@}"
-      printf '%s\n' "${remote_url%%:*}"
+      host="${remote_url%%:*}"
+      host="${host%%/*}"
       ;;
     http://*|https://*)
       remote_url="${remote_url#http://}"
       remote_url="${remote_url#https://}"
-      printf '%s\n' "${remote_url%%/*}"
+      # strip userinfo: oauth2:token@host  or  user@host  or  user:pass@host
+      remote_url="${remote_url#*@}"
+      host="${remote_url%%/*}"
+      host="${host%%:*}"
       ;;
     *)
       return 1
       ;;
   esac
+
+  [[ -n "$host" && "$host" != *"@"* && "$host" != *":"* ]] || return 1
+  printf '%s\n' "$host"
+}
+
+# Run glab against the host derived from git remote (or GITLAB_HOST).
+# Note: --hostname is only valid on `glab auth status`, not a global flag.
+# Host selection for other commands is via GITLAB_HOST / GL_HOST env.
+glab_cmd() {
+  GITLAB_HOST="$gitlab_host" GL_HOST="$gitlab_host" glab "$@"
 }
 
 slack_ts_from_permalink_id() {
@@ -281,6 +310,7 @@ resolve_slack_thread() {
 
 ensure_git_context() {
   local remote_url
+  local detected_host=""
 
   git rev-parse --is-inside-work-tree >/dev/null 2>&1 || die "not inside a git repository"
 
@@ -289,14 +319,40 @@ ensure_git_context() {
   [[ "$branch" != "$target_branch" ]] || die "current branch and target branch are both '$branch'"
 
   remote_url="$(git_remote_url)"
-  gitlab_host="${GITLAB_HOST:-$(gitlab_host_from_remote "$remote_url")}"
-  [[ -n "$gitlab_host" ]] || die "could not detect GitLab host from remote: $remote_url"
+  [[ -n "$remote_url" ]] || die "no git remote configured (need origin)"
+
+  if [[ -n "${GITLAB_HOST:-}" ]]; then
+    gitlab_host="$GITLAB_HOST"
+    info "using GITLAB_HOST override: $gitlab_host"
+  else
+    detected_host="$(gitlab_host_from_remote "$remote_url" || true)"
+    [[ -n "$detected_host" ]] || die "could not detect GitLab host from remote: $remote_url
+  Supported remotes: ssh://git@host:port/group/repo, git@host:group/repo, https://host/group/repo, https://oauth2:token@host/group/repo"
+    gitlab_host="$detected_host"
+    info "detected GitLab host: $gitlab_host (from $remote_url)"
+  fi
+
+  # glab accepts either; set both for older/newer CLI
   export GITLAB_HOST="$gitlab_host"
+  export GL_HOST="$gitlab_host"
 }
 
 ensure_glab_auth() {
-  glab auth status --hostname "$gitlab_host" >/dev/null 2>&1 ||
-    die "glab is not authenticated for $gitlab_host. Run: glab auth login --hostname $gitlab_host"
+  # auth status supports --hostname; other subcommands do not
+  if glab auth status --hostname "$gitlab_host" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if glab auth status --all 2>/dev/null | grep -Fq "$gitlab_host"; then
+    return 0
+  fi
+
+  die "glab is not authenticated for host '$gitlab_host'.
+Remote was parsed to bare hostname (token/user@ stripped).
+Run:
+  glab auth login --hostname $gitlab_host
+Or with a personal access token:
+  glab auth login --hostname $gitlab_host --token <glpat-...>"
 }
 
 prompt_target_branch() {
@@ -338,7 +394,7 @@ mr_url_from_json() {
 find_existing_mr() {
   local output
 
-  output="$(glab mr list \
+  output="$(glab_cmd mr list \
     --source-branch "$branch" \
     --target-branch "$target_branch" \
     --output json)"
@@ -362,7 +418,7 @@ create_mr() {
     -s "$branch"
     -b "$target_branch"
     -t "$commit_message"
-    --fill
+    -d ""
     -y
   )
 
@@ -371,12 +427,12 @@ create_mr() {
   fi
 
   info "creating MR into $target_branch"
-  output="$(glab "${args[@]}")"
+  output="$(glab_cmd "${args[@]}")"
   printf '%s\n' "$output"
 
   mr_url="$(printf '%s\n' "$output" | extract_url || true)"
   if [[ -z "$mr_url" ]]; then
-    output="$(glab mr view "$branch" --output json)"
+    output="$(glab_cmd mr view "$branch" --output json)"
     mr_url="$(printf '%s\n' "$output" | mr_url_from_json)"
   fi
 
