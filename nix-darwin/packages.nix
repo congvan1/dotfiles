@@ -79,6 +79,7 @@
 
     # Network & Security Tools
     "openvpn"
+    "openfortivpn"      # Fortinet SSL VPN (CLI; official FortiClient not on Homebrew)
     "nmap"
     "squid"             # Local forward proxy
     "xh"                # Modern HTTP client

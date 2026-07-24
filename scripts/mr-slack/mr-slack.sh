@@ -383,7 +383,11 @@ push_branch() {
   local push_output
 
   info "pushing branch: $branch"
-  push_output="$(git push -u origin "$branch" 2>&1)"
+  if ! push_output="$(git push -u origin "$branch" 2>&1)"; then
+    error "failed to push branch: $branch"
+    printf '%s\n' "$push_output" >&2
+    return 2
+  fi
   printf '%s\n' "$push_output"
 }
 
@@ -394,10 +398,14 @@ mr_url_from_json() {
 find_existing_mr() {
   local output
 
-  output="$(glab_cmd mr list \
+  if ! output="$(glab_cmd mr list \
     --source-branch "$branch" \
     --target-branch "$target_branch" \
-    --output json)"
+    --output json 2>&1)"; then
+    error "failed to query GitLab for an existing MR"
+    printf '%s\n' "$output" >&2
+    return 2
+  fi
 
   mr_url="$(printf '%s\n' "$output" | mr_url_from_json)"
   if [[ -n "$mr_url" ]]; then
@@ -427,7 +435,11 @@ create_mr() {
   fi
 
   info "creating MR into $target_branch"
-  output="$(glab_cmd "${args[@]}")"
+  if ! output="$(glab_cmd "${args[@]}" 2>&1)"; then
+    error "failed to create MR into $target_branch"
+    printf '%s\n' "$output" >&2
+    return 2
+  fi
   printf '%s\n' "$output"
 
   mr_url="$(printf '%s\n' "$output" | extract_url || true)"

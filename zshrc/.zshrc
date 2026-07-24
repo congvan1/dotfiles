@@ -23,6 +23,9 @@ done
 fpath=("${clean_fpath[@]}")
 unset clean_fpath broken_completion completion dir
 
+# grok CLI completions (must be on fpath before compinit)
+[[ -d ~/.grok/completions/zsh ]] && fpath=(~/.grok/completions/zsh $fpath)
+
 compinit -i -d "$HOME/.cache/zsh/zcompdump"
 autoload -Uz bashcompinit && bashcompinit
 zstyle ':completion:*' cache-path "$HOME/.cache/zsh"
@@ -250,12 +253,31 @@ _kdec_completion() {
 compdef _kdec_completion kdec
 
 seal() {
-    if [[ -e "$1" ]]; then
-        kubeseal --scope cluster-wide --controller-namespace kube-system --controller-name sealed-secrets-controller --cert $1 -o yaml -w sealed.yaml
-    else
-        echo "Path not exist"
+    local env=$1
+    if [[ -z "$env" ]]; then
+        echo "Usage: seal <env>"
+        echo "Environments: dev, stg, prd, ctl"
+        return 1
     fi
+
+    # Use the existing $CELLUTIONS_DIR environment variable
+    local cert_file="$CELLUTIONS_DIR/public-key-sealed-sercret/${env}-public-key-cert.pem"
+
+    if [[ ! -f "$cert_file" ]]; then
+        echo "Error: Cert file not found at $cert_file"
+        return 1
+    fi
+
+    echo "Sealing secret for $env environment..."
+    kubeseal --scope cluster-wide --controller-namespace kube-system --controller-name sealed-secrets-controller --cert "$cert_file" -o yaml -w sealed.yaml
 }
+
+_seal_completion() {
+    local -a envs
+    envs=(dev stg prd ctl)
+    _describe -t envs 'environment' envs
+}
+compdef _seal_completion seal
 
 # HTTP requests with xh!
 alias http="xh"
@@ -470,6 +492,8 @@ install_apple_container() {
 
 # >>> grok installer >>>
 export PATH="$HOME/.grok/bin:$PATH"
-fpath=(~/.grok/completions/zsh $fpath)
-autoload -Uz compinit && compinit -C
 # <<< grok installer <<<
+
+
+# Added by Antigravity CLI installer
+export PATH="/Users/van/.local/bin:$PATH"

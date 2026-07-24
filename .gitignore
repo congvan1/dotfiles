@@ -1,6 +1,7 @@
 .DS_Store
 __pycache__/
 *.pyc
+**/.venv/
 **/*.bak
 **/.env
 .nvimlog
@@ -12,3 +13,4 @@ fzf
 history.txt
 codex/skills/confluence-docs/docs/
 vendor/
+skills/golang-*/

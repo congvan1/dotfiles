@@ -11,10 +11,11 @@ Use this skill for VTVPrime incident analysis where the user wants direct eviden
 
 1. Identify environment: `dev`, `stg`, or `prd`.
 2. Identify target service, topic, subscription, pod, or namespace.
-3. For Pulsar dispatch/backlog issues, read `references/pulsar-dispatch.md`.
-4. Query metrics with `notion-skills:metric-search` before inferring root cause.
-5. Query logs with `notion-skills:log-search` when metrics suggest broker/storage issues or the user asks for log evidence.
-6. Return structured tables and clearly separate direct evidence from inference.
+3. For Seenow service setup or deployment, read `seenow-argocd.md`.
+4. For Pulsar dispatch/backlog issues, read `references/pulsar-dispatch.md`.
+5. Query metrics with `notion-skills:metric-search` before inferring root cause.
+6. Query logs with `notion-skills:log-search` when metrics suggest broker/storage issues or the user asks for log evidence.
+7. Return structured tables and clearly separate direct evidence from inference.
 
 ## References
 
@@ -22,6 +23,7 @@ Use this skill for VTVPrime incident analysis where the user wants direct eviden
 - `references/promql.md`: reusable Pulsar PromQL and query helper examples.
 - `references/log-search.md`: Pulsar broker log queries for RCA.
 - `references/output-format.md`: required Summary, Per Partition, and Diagnosis tables.
+- `seenow-argocd.md`: Seenow service structure, shared configuration, secrets, Kustomize, Helm, and deployment conventions.
 
 ## Output Style
 
