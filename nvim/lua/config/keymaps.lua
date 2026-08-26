@@ -11,3 +11,12 @@ vim.keymap.set("v", "<leader>/", "gc", { desc = "Comment toggle linewise (visual
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what anyone expects.
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+
+-- Fix 'E' in terminal buffers to go to the end of the actual text
+-- instead of jumping across padded spaces to the next line.
+vim.api.nvim_create_autocmd("TermOpen", {
+  group = vim.api.nvim_create_augroup("TerminalFixE", { clear = true }),
+  callback = function()
+    vim.keymap.set({ "n", "v" }, "E", "g_", { buffer = true, desc = "End of text (ignore terminal padding)" })
+  end,
+})

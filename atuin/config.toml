@@ -205,5 +205,5 @@ scroll_exits = false
 # Enable sync v2 by default
 # This ensures that sync v2 is enabled for new installs only
 # In a later release it will become the default across the board
-records = false
+records = true
 sync_frequency = "0"

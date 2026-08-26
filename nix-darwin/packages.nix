@@ -94,6 +94,7 @@
     "dnsmasq"           # DNS/DHCP server
     "wget"
     "curl"
+    "iproute2mac"       # Adds 'ip' command on macOS
 
     # Data Processing
     "jq"                # JSON processor

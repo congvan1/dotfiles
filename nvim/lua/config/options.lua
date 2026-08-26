@@ -3,5 +3,6 @@
 -- Add any additional options here
 --
 vim.opt.wrap = true
+vim.opt.ambiwidth = "double"
 vim.g.codeium_os = "Darwin"
 vim.g.codeium_arch = "arm64"
