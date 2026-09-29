@@ -63,6 +63,8 @@
     ".config/atuin".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/atuin";
     ".docker/cli-plugins/docker-buildx".source =
       config.lib.file.mkOutOfStoreSymlink "/opt/homebrew/lib/docker/cli-plugins/docker-buildx";
+    ".docker/cli-plugins/docker-compose".source =
+      config.lib.file.mkOutOfStoreSymlink "/opt/homebrew/lib/docker/cli-plugins/docker-compose";
     ".config/ghostty".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/ghostty";
     ".config/aerospace".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/aerospace";
     ".config/sketchybar".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/sketchybar";

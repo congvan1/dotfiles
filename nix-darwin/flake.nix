@@ -25,6 +25,7 @@
       environment.systemPath = [
         "/opt/homebrew/bin"
         "/opt/homebrew/sbin"
+        "/opt/homebrew/opt/libpq/bin"
       ];
       
       nix.settings.experimental-features = "nix-command flakes";

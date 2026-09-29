@@ -65,7 +65,6 @@ before adding a component.
   base/
     kustomization.yaml
     <component>-values.yaml
-    <service>-env.properties
   overlays/
     dev/
       kustomization.yaml
@@ -102,8 +101,8 @@ Common chart choices:
 
 Use the service's base values for stable configuration and the overlay values
 for environment-specific endpoints, annotations, resources, and runtime
-switches. Keep every new service image tag in `*-values.yaml` as `latest`;
-the CI/CD process replaces it with the correct immutable tag.
+switches. Use an explicitly supplied image tag for all requested components. Otherwise,
+keep new service image tags in `*-values.yaml` as `latest` for CI/CD replacement.
 
 ### 3. Define stable release names
 
@@ -129,6 +128,12 @@ Keep these names consistent across:
 
 ### 4. Reuse shared configuration and secrets
 
+Keep all service-owned plaintext configuration in one
+`<env>-<service>-env.properties` file per overlay and one service ConfigMap.
+Reference shared platform env files directly in the same generator; do not copy
+their values or create component-specific properties files. Do not add a README
+unless requested.
+
 Use `configMapGenerator` for non-secret environment configuration. Existing
 services generally use stable ConfigMap names:
 
@@ -139,7 +144,6 @@ configMapGenerator:
       disableNameSuffixHash: true
     envs:
       - dev-<service>-env.properties
-      - ../../base/<service>-env.properties
       - ../../../00-shared-config/overlays/dev/dev-pulsar-config-env.properties
       - ../../../00-shared-config/overlays/dev/dev-s3-env.properties
 ```
@@ -226,6 +230,55 @@ components:
 That component standardizes the generated service health and metrics ports,
 probes, and PodMonitor behavior. Reuse it unless the workload has a documented
 exception.
+
+## Shared etcd and loyalty ownership workloads
+
+For a dependency review, inspect the requested Kubernetes context explicitly
+(e.g. `kubectl --context vng-dev ...`); do not change the current context.
+Compare service README/ADRs, startup code, GitOps resources, and live objects.
+A review does not authorize provisioning credentials or deploying workloads.
+
+### Verified dev baseline (2026-09-22; recheck before deployment)
+
+- Seenow application etcd: StatefulSet `sn-dev-etcd-cluster/etcd-cluster`,
+  3/3 Ready, etcd 3.5.21. Client endpoint:
+  `etcd-cluster.sn-dev-etcd-cluster.svc.cluster.local:2379`.
+- Live `sn-dev-workload/livechat-service-cm` and
+  `apps-vng/livechat-service/overlays/dev/dev-livechat-service-env.properties`
+  both point to this endpoint. Authentication is enabled; client URLs use HTTP.
+  The etcd NetworkPolicy allows client port 2379.
+- Prefer evaluating this existing application cluster before proposing another
+  etcd cluster. APISIX, ArgoCD, Milvus, and Kubernetes control-plane etcd are
+  separate dependencies, not interchangeable application endpoints.
+- Sharing requires distinct key prefixes and appropriate credentials. Recommend
+  a loyalty-scoped user/role; do not assume livechat credentials grant access or
+  reuse root credentials. Check authorized prefix access before deployment.
+  Ready pods and Service endpoints do not prove authenticated client access,
+  quorum health, available capacity, or end-to-end network reachability.
+- This inspection did not verify stg/prd endpoints, loyalty credentials, or
+  capacity. Do not extrapolate dev observations to other environments.
+
+### Spender and inventory-keeper deployment checks
+
+These source-specific facts were reviewed on 2026-09-22 in
+`/Users/van/workspace/work/clients/Cellutions/seenow/loyalty-service`;
+recheck `spender/main.go`, `inventory-keeper/main.go`, and ADRs 0004–0008.
+
+| Check | Deployment implication |
+|---|---|
+| Hardcoded StatefulSet names `spender`, `inventory-keeper` | These are not example names. A conventional `loyalty-service-` fullname prefix breaks the Kubernetes lookup unless source changes. |
+| Etcd keys under `/seenow/loyalty/ownership/{workload}/` | Both components can share application etcd with separate ownership paths. No environment/namespace is encoded: another loyalty installation on the same etcd needs distinct prefixes. |
+| In-cluster Kubernetes client | Supply a ServiceAccount and namespaced RBAC; ADR 0008 specifies `get/list/watch` on StatefulSets and Pods. Inject `POD_NAMESPACE` via Downward API. |
+| SQLite defaults under `/data` | Optional path env vars do not make persistence optional. Mount a durable PVC per pod; specify storage class, size, permissions, retention, and recovery expectations. |
+| Inventory gRPC listens on TCP 81 | Document Service/headless DNS and owner-specific routing. ADR 0006 requires GraphQL to resolve the partition owner through etcd; a random replica may not serve that item. Verify caller wiring exists rather than treating ADR intent as implemented. |
+| Six partitions | Check command/event/reply/DLQ topic declarations against README and source. Verify retention supports state replay and recovery, not just partition count. |
+| StatefulSet RollingUpdate | Describe normal rollout behavior without claiming unconditional single ownership. Correctness also depends on lease fencing, graceful shutdown, and catch-up; forced deletion and node failure require separate consideration. |
+
+At review time, neither new component was enabled in the dev overlay or live
+workloads. Of the topics listed for these components, only `user-ledger` appeared
+in GitOps and live `PulsarTopic` resources (6 partitions). Absence from these
+resources is not proof of absence on the broker; query broker metadata when that
+claim matters. These are dated observations, not permanent deployment blockers.
 
 ## Validation before sync
 

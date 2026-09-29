@@ -11,10 +11,18 @@ Use this skill for VTVPrime incident analysis where the user wants direct eviden
 
 1. Identify environment: `dev`, `stg`, or `prd`.
 2. Identify target service, topic, subscription, pod, or namespace.
-3. For Seenow service setup or deployment, read `seenow-argocd.md`.
+3. For Seenow service setup, deployment, or README deployment-readiness review,
+   read `seenow-argocd.md`, including its etcd and loyalty ownership checks
+   when reviewing spender or inventory-keeper. Compare README claims with
+   source, GitOps declarations, and the explicitly selected live context.
 4. For ArgoCD/Kubernetes deployment, rollout, hook, image, ConfigMap, Secret,
    StatefulSet, or Flink failures, also read `references/argocd.md`.
-5. Before writing manifests, enumerate every mandatory environment variable from
+5. For Seenow manifests, keep service-owned plaintext environment settings in one
+   `<env>-<service>-env.properties` file per overlay and one service ConfigMap;
+   reference shared platform properties in its generator without copying them.
+   Do not create a README unless requested. Use an explicitly supplied image tag
+   for every requested component; otherwise follow the `latest` CI convention.
+   Before writing manifests, enumerate every mandatory environment variable from
    the service README and source, per component. Classify each as shared,
    plaintext configuration, or credential; do not silently omit unknown keys.
    Do not set optional variables that already have documented application
@@ -24,6 +32,14 @@ Use this skill for VTVPrime incident analysis where the user wants direct eviden
    `*-sealed-secret.yaml` draft as a Kubernetes `Secret` with `stringData` keys
    set to `<FILL_ME>`; do not copy another environment's ciphertext or secret.
    Mark the overlay non-deployable until the draft is populated and sealed.
+   For Seenow service workload values, include the deployment annotation:
+   ```yaml
+   baseAnnotations:
+     argocd.argoproj.io/sync-wave: 2
+   ```
+   This is deployment-owned metadata and must not be omitted with CI-owned
+   annotations. Check every enabled workload component in the overlay for
+   this setting before finishing; preserve explicit hook/dependency waves.
    Do not add CI-owned annotations or labels to service/projector values unless
    the user explicitly provides them. Leave `annotations`, `podAnnotations`,
    `labels`, and `podLabels` absent when CI injects Backstage,

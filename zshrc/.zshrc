@@ -140,7 +140,7 @@ alias v="nvim"
 # Nmap
 alias nm="nmap -sC -sV -oN nmap"
 
-export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omer/.vimpkg/bin:${GOPATH}/bin:$HOME/.cargo/bin"
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/omer/.vimpkg/bin:${GOPATH}/bin:$HOME/.cargo/bin:/opt/homebrew/opt/libpq/bin"
 
 alias cl='clear'
 
@@ -255,23 +255,44 @@ _kdec_completion() {
 compdef _kdec_completion kdec
 
 seal() {
-    local env=$1
-    if [[ -z "$env" ]]; then
-        echo "Usage: seal <env>"
-        echo "Environments: dev, stg, prd, ctl"
+    local env=$1 destination=sealed.yaml temp_file result
+    local -a input_args=()
+    if (( $# == 3 )) && [[ ( $2 == -r || $2 == --replace || $2 == --overwrite ) && -n $3 ]]; then
+        destination=$3
+        if [[ $2 != --overwrite ]]; then
+            if [[ ! -f "$destination" || ! -r "$destination" ]]; then
+                echo "Error: Cannot read file $destination" >&2
+                return 1
+            fi
+            input_args=(--secret-file "$destination")
+        fi
+    elif (( $# != 1 )) || [[ -z $env ]]; then
+        echo "Usage: seal <env> [-r|--replace <file>] [or --overwrite <destination>]" >&2
+        echo "Environments: dev, stg, prd, ctl" >&2
         return 1
     fi
 
-    # Use the existing $CELLUTIONS_DIR environment variable
     local cert_file="$CELLUTIONS_DIR/public-key-sealed-sercret/${env}-public-key-cert.pem"
-
     if [[ ! -f "$cert_file" ]]; then
-        echo "Error: Cert file not found at $cert_file"
+        echo "Error: Cert file not found at $cert_file" >&2
         return 1
     fi
 
-    echo "Sealing secret for $env environment..."
-    kubeseal --scope cluster-wide --controller-namespace kube-system --controller-name sealed-secrets-controller --cert "$cert_file" -o yaml -w sealed.yaml
+    temp_file=$(mktemp "${destination}.tmp.XXXXXX") || return 1
+    echo "Sealing secret for $env environment..." >&2
+    kubeseal --scope cluster-wide --controller-namespace kube-system --controller-name sealed-secrets-controller --cert "$cert_file" "${input_args[@]}" -o yaml > "$temp_file"
+    result=$?
+    if (( result == 0 )); then
+        if [[ -s "$temp_file" ]]; then
+            mv -f -- "$temp_file" "$destination"
+            result=$?
+        else
+            echo "Error: kubeseal produced empty output" >&2
+            result=1
+        fi
+    fi
+    rm -f -- "$temp_file"
+    return $result
 }
 
 _seal_completion() {

@@ -17,6 +17,6 @@ vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" }
 vim.api.nvim_create_autocmd("TermOpen", {
   group = vim.api.nvim_create_augroup("TerminalFixE", { clear = true }),
   callback = function()
-    vim.keymap.set({ "n", "v" }, "E", "g_", { buffer = true, desc = "End of text (ignore terminal padding)" })
+    vim.keymap.set("n", "E", "g_", { buffer = true, desc = "End of text (ignore terminal padding)" })
   end,
 })

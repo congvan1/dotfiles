@@ -10,12 +10,4 @@ return {
       vim.treesitter.language.register("nasm", "asm")
     end,
   },
-  {
-    "neovim/nvim-lspconfig",
-    opts = {
-      servers = {
-        asm_lsp = {},
-      },
-    },
-  },
 }
