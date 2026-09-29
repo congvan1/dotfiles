@@ -152,7 +152,8 @@ if (( $+functions[_kubectl] )); then
 fi
 alias ka="kubectl apply -f"
 alias kg="kubectl get"
-alias kd="kubectl describe"
+alias kd="kubectl delete"
+alias kds="kubectl describe"
 alias kdel="kubectl delete"
 alias kl="kubectl logs"
 alias kgpo="kubectl get pod"
@@ -160,7 +161,8 @@ alias kgd="kubectl get deployments"
 alias kx="kubectx"
 alias kns="kubens"
 alias kl="kubectl logs -f"
-alias ke="kubectl exec -it"
+alias ke="kubectl edit"
+alias kr="kubectl run"
 alias kcns='kubectl config set-context --current --namespace'
 alias podname=''
 
