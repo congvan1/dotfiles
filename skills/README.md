@@ -47,6 +47,16 @@ Default mode is **symlink** (edit once in this repo, all agents see updates). Us
 | grok   | `~/.grok/skills`        |
 | agents | `~/.agents/skills`      |
 
+## Plain language
+
+`plain-english-docs` guides documentation writing. Everyday reply preferences live in
+`../agent-instructions/plain-language.md`.
+
+Install the skill with the sync command above. Link the preferences file to
+`~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md` to apply it across projects.
+If those files already exist, merge the preferences into them instead of replacing them.
+Start a new session after changing global instructions. No hook is needed.
+
 ## Secrets
 
 Keep credentials in per-skill `.env` files (gitignored locally if needed). Never hardcode agent-home paths in `SKILL.md`; use paths relative to the skill directory.
